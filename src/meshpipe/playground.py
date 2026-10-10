@@ -20,7 +20,9 @@ class GestureController:
     def reset(self) -> None:
         self.active.clear()
 
-    def update(self, scores: dict[str, float], tracked: bool, clock: float) -> list[Gesture]:
+    def update(
+        self, scores: dict[str, float], tracked: bool, clock: float, yaw: float = 0
+    ) -> list[Gesture]:
         if not tracked:
             self.reset()
             return []
@@ -30,6 +32,8 @@ class GestureController:
             "Right wink": right if left < self.release else 0,
             "Open mouth": scores.get("jawOpen", 0),
             "Smile": (scores.get("mouthSmileLeft", 0) + scores.get("mouthSmileRight", 0)) / 2,
+            "Turn left": max(0, -yaw / 0.45),
+            "Turn right": max(0, yaw / 0.45),
         }
         events = []
         for name, value in values.items():
@@ -44,7 +48,7 @@ class GestureController:
 
 
 class ExpressionGame:
-    targets = ("Smile", "Open mouth", "Left wink", "Right wink")
+    targets = ("Smile", "Open mouth", "Left wink", "Right wink", "Turn left", "Turn right")
 
     def __init__(self):
         self.score = 0

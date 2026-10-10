@@ -22,11 +22,13 @@ class CartoonTemplate:
             raise ValueError("Cartoon image must contain uint8 RGBA pixels")
         if max(self.rgba.shape[:2]) > 1024 or min(self.rgba.shape[:2]) < 32:
             raise ValueError("Cartoon image dimensions must be between 32 and 1024")
-        if set(self.anchors) != set(ANCHOR_NAMES):
+        if not isinstance(self.anchors, dict) or set(self.anchors) != set(ANCHOR_NAMES):
             raise ValueError("Cartoon requires left eye, right eye and mouth anchors")
         for point in self.anchors.values():
             if (
-                len(point) != 2
+                not isinstance(point, (list, tuple))
+                or len(point) != 2
+                or any(not isinstance(value, (int, float)) for value in point)
                 or not np.isfinite(point).all()
                 or not all(0.05 <= value <= 0.95 for value in point)
             ):

@@ -6,25 +6,9 @@ import time
 
 import numpy as np
 
+from meshpipe.osc_protocol import osc_message
 from meshpipe.pipeline import Frame
 from meshpipe.pose import head_angles
-
-
-def _text(value: str) -> bytes:
-    encoded = value.encode("utf-8") + b"\0"
-    return encoded + b"\0" * (-len(encoded) % 4)
-
-
-def osc_message(address: str, values: tuple[float, ...]) -> bytes:
-    if not address.startswith("/") or "\0" in address:
-        raise ValueError("Invalid OSC address")
-    if not np.isfinite(values).all():
-        raise ValueError("OSC values must be finite")
-    return (
-        _text(address)
-        + _text("," + "f" * len(values))
-        + struct.pack(">" + "f" * len(values), *values)
-    )
 
 
 def packet(frame: Frame, scores: dict[str, float], sequence: int) -> bytes:

@@ -27,7 +27,7 @@ def _encode_points(points: np.ndarray | None) -> bytes | None:
 def _decode_points(data: bytes | None) -> np.ndarray | None:
     if data is None:
         return None
-    if len(data) != 468 * 3 * 4:
+    if not isinstance(data, bytes) or len(data) != 468 * 3 * 4:
         raise ValueError("Session landmark array has invalid dimensions")
     points = np.frombuffer(data, dtype="<f4").reshape(468, 3).astype(np.float64)
     if not np.isfinite(points).all():
@@ -123,6 +123,8 @@ class SessionRecorder:
                 connection.close()
 
     def close(self) -> Path:
+        if getattr(self, "finalized", False):
+            return self.path
         self.stopping.set()
         self.thread.join(timeout=15)
         if self.thread.is_alive():
@@ -135,6 +137,7 @@ class SessionRecorder:
         if self.path.exists():
             raise ValueError("Session destination appeared while recording")
         self.partial.replace(self.path)
+        self.finalized = True
         return self.path
 
 
@@ -162,7 +165,10 @@ class SessionReader:
             )
             if self.timestamps[0] < 0:
                 raise ValueError("Session timestamps must be nonnegative")
-        except (sqlite3.Error, ValueError):
+        except sqlite3.Error as error:
+            self.connection.close()
+            raise ValueError("Invalid MeshPipe session database") from error
+        except ValueError:
             self.connection.close()
             raise
 
@@ -194,6 +200,8 @@ class SessionReader:
         rgb = np.frombuffer(decoded, dtype=np.uint8).reshape(height, width, 3).copy()
         landmarks = _decode_points(points)
         raw_landmarks = _decode_points(raw)
+        if not isinstance(expressions, str) or len(expressions) > 32_768:
+            raise ValueError("Invalid session expression payload")
         scores = json.loads(expressions)
         if (
             not isinstance(scores, dict)
