@@ -1,3 +1,5 @@
+import time
+
 import cv2
 import numpy as np
 import pytest
@@ -40,3 +42,71 @@ def test_loop_keeps_monotonic_timestamps(video):
 def test_missing_video_is_actionable(tmp_path):
     with pytest.raises(FileNotFoundError, match="Video input does not exist"):
         VideoSource(str(tmp_path / "missing.mp4"), 640)
+
+
+class FakeCamera:
+    def __init__(self, disconnected=False):
+        self.disconnected = disconnected
+        self.released = False
+        self.count = 0
+
+    def isOpened(self):
+        return True
+
+    def set(self, *args):
+        return True
+
+    def get(self, *args):
+        return 30
+
+    def read(self):
+        time.sleep(0.01)
+        self.count += 1
+        return not self.disconnected, np.full((16, 16, 3), self.count % 255, dtype=np.uint8)
+
+    def release(self):
+        self.released = True
+
+
+def test_camera_mailbox_and_shutdown(monkeypatch):
+    camera = FakeCamera()
+    monkeypatch.setattr(cv2, "VideoCapture", lambda source: camera)
+    source = VideoSource("0", 640)
+    try:
+        first, first_time = source.read()
+        second, second_time = source.read()
+        assert second[0, 0, 0] > first[0, 0, 0]
+        assert second_time > first_time
+    finally:
+        source.close()
+    assert camera.released
+    assert not source.thread.is_alive()
+
+
+def test_camera_disconnection_surfaces_error(monkeypatch):
+    camera = FakeCamera(disconnected=True)
+    monkeypatch.setattr(cv2, "VideoCapture", lambda source: camera)
+    source = VideoSource("0", 640)
+    try:
+        with pytest.raises(OSError, match="disconnected"):
+            source.read()
+    finally:
+        source.close()
+
+
+def test_variable_frame_rate_uses_decoder_timestamps(monkeypatch, tmp_path):
+    path = tmp_path / "variable.mp4"
+    path.write_bytes(b"placeholder")
+
+    class VariableRateCapture(FakeCamera):
+        def get(self, property_id):
+            if property_id == cv2.CAP_PROP_POS_MSEC:
+                return [0, 50, 120][self.count - 1]
+            return 30
+
+    monkeypatch.setattr(cv2, "VideoCapture", lambda source: VariableRateCapture())
+    source = VideoSource(str(path), 640)
+    try:
+        assert [source.read()[1] for _ in range(3)] == [0, 50, 120]
+    finally:
+        source.close()

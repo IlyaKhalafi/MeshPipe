@@ -28,6 +28,7 @@ class VideoSource:
         self.fps = reported_fps if np.isfinite(reported_fps) and 1 <= reported_fps <= 240 else 30.0
         self.index = 0
         self.offset_ms = 0.0
+        self.last_timestamp_ms = -1.0
         self.started = time.monotonic()
         self.stop = threading.Event()
         self.condition = threading.Condition()
@@ -74,13 +75,25 @@ class VideoSource:
         else:
             success, frame = self.capture.read()
             if not success and self.loop and self.index:
-                self.offset_ms += self.index * 1000 / self.fps
+                self.offset_ms = self.last_timestamp_ms + 1000 / self.fps
                 self.index = 0
                 self.capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 success, frame = self.capture.read()
             if not success:
                 return None
-            timestamp = int(self.offset_ms + self.index * 1000 / self.fps)
+            presentation_ms = self.capture.get(cv2.CAP_PROP_POS_MSEC)
+            candidate = self.offset_ms + presentation_ms
+            if (
+                not np.isfinite(presentation_ms)
+                or presentation_ms < 0
+                or candidate <= self.last_timestamp_ms
+            ):
+                candidate = max(
+                    self.offset_ms + self.index * 1000 / self.fps,
+                    self.last_timestamp_ms + 1000 / self.fps,
+                )
+            self.last_timestamp_ms = candidate
+            timestamp = round(candidate)
             self.index += 1
         height, width = frame.shape[:2]
         if width > self.width:

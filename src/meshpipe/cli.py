@@ -91,6 +91,7 @@ def benchmark(config: Config, frames: int, warmup: int) -> dict:
         "cpu": platform.processor() or platform.machine(),
         "source": "synthetic-demo" if config.demo else config.source,
         "width": config.width,
+        "processed_size": [frame.rgb.shape[1], frame.rgb.shape[0]],
         "smoothing": config.smoothing,
         "frames": len(durations),
         "faces_detected": detected,

@@ -1,3 +1,4 @@
+import hashlib
 import os
 import tempfile
 import urllib.request
@@ -7,6 +8,7 @@ MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/face_landmarker/"
     "face_landmarker/float16/1/face_landmarker.task"
 )
+MODEL_SHA256 = "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
 
 
 def default_model_path() -> Path:
@@ -35,13 +37,19 @@ def download_model(target: Path) -> Path:
             with tempfile.NamedTemporaryFile(dir=target.parent, delete=False) as output:
                 temporary = Path(output.name)
                 total = 0
+                digest = hashlib.sha256()
                 while chunk := response.read(1024 * 1024):
                     total += len(chunk)
                     if total > 100 * 1024 * 1024:
                         raise ValueError("Model download exceeds 100 MB safety limit")
                     output.write(chunk)
+                    digest.update(chunk)
         if total < 1024 * 1024:
             raise ValueError("Model download is unexpectedly small")
+        if digest.hexdigest() != MODEL_SHA256:
+            raise ValueError(
+                "Model checksum mismatch. Download discarded; retry the official model"
+            )
         temporary.replace(target)
         return target
     finally:
