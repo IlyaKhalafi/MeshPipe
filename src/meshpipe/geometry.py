@@ -24,10 +24,9 @@ def inside_polygon(points: NDArray, polygon: NDArray) -> NDArray:
         crosses = (current[1] > points[:, 1]) != (previous[1] > points[:, 1])
         divisor = previous[1] - current[1]
         if abs(divisor) > 1e-12:
-            boundary = (
-                (previous[0] - current[0]) * (points[:, 1] - current[1]) / divisor
-                + current[0]
-            )
+            boundary = (previous[0] - current[0]) * (points[:, 1] - current[1]) / divisor + current[
+                0
+            ]
             inside ^= crosses & (points[:, 0] < boundary)
         previous = current
     return inside

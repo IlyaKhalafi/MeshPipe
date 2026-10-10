@@ -35,7 +35,9 @@ class VideoSource:
         self.error: Exception | None = None
         self.thread: threading.Thread | None = None
         if self.camera:
-            self.thread = threading.Thread(target=self._read_camera, name="meshpipe-capture")
+            self.thread = threading.Thread(
+                target=self._read_camera, name="meshpipe-capture", daemon=True
+            )
             self.thread.start()
 
     def _read_camera(self) -> None:
@@ -83,7 +85,9 @@ class VideoSource:
         height, width = frame.shape[:2]
         if width > self.width:
             frame = cv2.resize(
-                frame, (self.width, round(height * self.width / width)), interpolation=cv2.INTER_AREA
+                frame,
+                (self.width, round(height * self.width / width)),
+                interpolation=cv2.INTER_AREA,
             )
         return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), timestamp
 

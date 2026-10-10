@@ -4,9 +4,7 @@ from meshpipe.config import Config
 from meshpipe.model import resolve_model
 
 
-@pytest.mark.parametrize(
-    "arguments", [{"width": 10}, {"max_fps": 0}, {"detection_confidence": 2}]
-)
+@pytest.mark.parametrize("arguments", [{"width": 10}, {"max_fps": 0}, {"detection_confidence": 2}])
 def test_invalid_config(arguments):
     with pytest.raises(ValueError):
         Config(**arguments)

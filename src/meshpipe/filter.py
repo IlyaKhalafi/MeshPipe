@@ -36,9 +36,7 @@ class LandmarkFilter:
         )
         predicted = self.position + step * self.velocity
         covariance = transition @ self.covariance @ transition.T + process_noise
-        gain = covariance[..., :, 0] / (
-            covariance[..., 0, 0] + self.measurement_noise
-        )[..., None]
+        gain = covariance[..., :, 0] / (covariance[..., 0, 0] + self.measurement_noise)[..., None]
         residual = observed - predicted
         self.position = predicted + gain[..., 0] * residual
         self.velocity += gain[..., 1] * residual
