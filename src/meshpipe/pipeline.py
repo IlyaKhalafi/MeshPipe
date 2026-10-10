@@ -23,6 +23,7 @@ class Frame:
     expressions: dict[str, float]
     processing_ms: float
     fps: float = 0.0
+    raw_landmarks: NDArray | None = None
 
 
 class Processor:
@@ -51,7 +52,7 @@ class Processor:
         if self.was_smoothing != smoothing:
             self.filter.reset()
         self.was_smoothing = smoothing
-        vertices = colors = vertex_normals = None
+        vertices = colors = vertex_normals = raw_landmarks = None
         if landmarks is None:
             self.filter.reset()
             self.previous_ms = None
@@ -79,6 +80,7 @@ class Processor:
             vertex_normals,
             expressions,
             (time.perf_counter() - started) * 1000,
+            raw_landmarks=raw_landmarks,
         )
 
     def close(self) -> None:
