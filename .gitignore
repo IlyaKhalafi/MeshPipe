@@ -205,6 +205,12 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Local project state
+.omo/
+.codegraph
+exports/
+*.task
+
 # Ruff stuff:
 .ruff_cache/
 

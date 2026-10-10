@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "meshpipe"
+version = "0.1.0"
+description = "A CPU-first facial mesh studio with Kalman smoothing and expression-driven avatars"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = "MIT"
+dependencies = [
+  "numpy>=1.26,<3",
+  "scipy>=1.11,<2",
+  "opencv-contrib-python>=4.10,<5",
+  "mediapipe>=0.10.21,<0.11",
+  "open3d>=0.19,<0.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.9", "pillow>=10", "mss>=10"]
+
+[project.scripts]
+meshpipe = "meshpipe.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/meshpipe"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
