@@ -209,6 +209,8 @@ tempCodeRunnerFile.py
 .omo/
 .codegraph
 exports/
+*.meshpipe
+*.meshpipe.partial
 *.task
 
 # Ruff stuff:

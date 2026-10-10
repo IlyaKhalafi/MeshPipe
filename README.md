@@ -4,7 +4,7 @@
 
 A CPU-first facial mesh studio. Track a face from a webcam or video, calm noisy
 landmarks with a Kalman filter, and explore the result in an interactive 3D view.
-Switch to an expression-driven emoji when a mesh is not enough.
+Record performances, inspect motion, or drive an emoji and your own PNG puppet.
 
 ![Python](https://img.shields.io/badge/Python-3.10%20to%203.12-3776AB?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-18A882?style=flat-square)
@@ -21,11 +21,44 @@ not a desktop screenshot. [Showcase details](docs/showcase.md).
 
 - **Live or recorded** with webcam indices and local video files, including looping.
 - **Stable geometry** with 468 landmarks, vectorized Kalman smoothing and cached SciPy triangulation.
-- **Five views** with surface, wireframe, points, source color and emoji modes.
+- **Seven views** with surface, wireframe, points, source color, UV texture, emoji and cartoon modes.
 - **Hands-on 3D** with drag-to-orbit, scroll-to-zoom, pan, reset and automatic orbit.
 - **Expression retargeting** with a built-in emoji driven by smile, jaw and blink scores.
 - **Useful exports** with colored PLY meshes and JSON landmarks, expressions and topology.
 - **Local by default** with no frame uploads, accounts or background model downloads.
+
+## Create. Inspect. Play.
+
+The workbench adds ten ways to explore facial motion without replacing the
+lean tracking pipeline. Recording, streaming, calibration, lab and game tools
+stay opt-in. Hide the workbench when you only need the viewer.
+
+| Tool | What you can do |
+| --- | --- |
+| Your cartoon | Load a PNG, mark both eyes and mouth, then animate a 2D puppet |
+| Performance recorder and replay | Save frames and facial motion, then seek, pause, loop or change speed without inference |
+| Local avatar stream | Send OSC expressions and approximate head rotation to Blender |
+| View recorder | Record the current source and rendered model together as GIF or MP4 |
+| Personal calibration | Capture neutral and comfortable expression ranges, then tune response |
+| UV texture | Map the actual video frame onto the deforming face surface |
+| Smoothing lab | Compare raw, Kalman and EMA geometry, costs and motion histories |
+| Landmark explorer | Pick vertices, highlight regions and export coordinate histories |
+| Tracking health | Check framing and lighting with a short fade during face loss |
+| Expression playground | Match smiles, jaw movement, winks and head turns with keyboard fallback |
+
+[Workbench guide](docs/workbench.md) and [Blender receiver](docs/streaming.md)
+cover setup and limitations.
+
+```bash
+meshpipe run --replay exports/performance.meshpipe --loop
+meshpipe run 0 --cartoon character.png
+meshpipe run 0 --osc-port 9000
+python tools/build_blender_addon.py
+```
+
+Performance files contain full source images and facial data. Keep them private
+unless every recorded person agrees to sharing. Local recordings and exports
+are ignored by Git.
 
 ## Get started
 
@@ -80,22 +113,26 @@ cartoon images into 3D faces.
 
 ## Studio controls
 
-![MeshPipe desktop studio tracking actual interview footage in emoji mode](docs/media/studio.png)
+![MeshPipe workbench showing a UV-textured face and landmark histories from real interview footage](docs/media/workbench.png)
 
-Actual desktop interface running the recorded interview.
+Actual desktop interface running the recorded interview. Source texture follows
+raw landmarks while geometry uses the selected smoothing.
 
 | Control | Behavior |
 | --- | --- |
 | Left drag | Orbit the camera around the model |
 | Scroll | Zoom |
 | Ctrl + left drag | Pan |
-| View menu | Surface, Wireframe, Points, Source Color or Emoji |
+| View menu | Surface, Wireframe, Points, Source Color, Textured, Emoji or Cartoon |
+| Lighting menu | Soft studio, Flat or Dramatic |
 | Palette menu | Mint, Amber or Cloud |
 | Kalman smoothing | Toggle temporal filtering without restarting |
 | Auto orbit | Rotate the camera automatically |
 | Pause | Freeze processing and retain the current view |
 | Reset view | Return to the front camera |
 | Export PLY + JSON | Save the current face to `exports/` |
+| Workbench tabs | Create recordings, inspect landmarks or play expression targets |
+| Shift + left click | Pick a vertex when landmark explorer is enabled |
 
 Exports contain the reconstructed face mesh and sampled source colors, regardless
 of the selected presentation mode. Emoji geometry is not exported.
@@ -138,6 +175,9 @@ the newest completed frame so slow rendering does not create a stale queue.
 - The face is an open surface, not a complete head or watertight printable object.
 - Extreme profiles, occlusion and poor lighting can break tracking.
 - Source Color interpolates landmark colors, not a full UV texture.
+- Textured mode projects the current source image, not a persistent texture atlas.
+- PNG cartoons use image warping, not automatic cartoon recognition or 3D reconstruction.
+- Expression scores and quality hints do not classify emotions or diagnose conditions.
 - Video decoding stays sequential. Slow processing slows playback; slow rendering may skip display updates.
 
 ## Troubleshooting
@@ -164,6 +204,8 @@ Capture  |  MediaPipe  |  Kalman  |  SciPy topology  |  Open3D
 Core processing has no GUI dependency. Capture, inference, filtering, geometry,
 rendering and exports live in separate modules. Tests cover filter stability,
 face loss, toggles, video EOF, looping timestamps, exports and download failures.
+Additional tests cover session replay, media encoding, calibration, bounded
+OSC packets and Blender shape-key preservation.
 
 [Architecture](docs/architecture.md) | [Contributing](CONTRIBUTING.md) |
 [Asset credits](THIRD_PARTY.md) | [License](LICENSE)

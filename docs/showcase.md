@@ -47,3 +47,14 @@ on a working display.
 `meshpipe --demo` remains available for trying the studio without camera access
 or a model download. It is synthetic and is not used for these showcases or
 face-detection benchmarks.
+
+## Workbench screenshot
+
+`docs/media/workbench.png` captures the native 1480 by 900 studio window running
+the same genuine NASA interview. Textured mode maps source pixels onto filtered
+geometry while Inspect shows landmark traces and previous lab measurements.
+The screenshot is not a mockup or a synthetic face input.
+
+```bash
+python tools/smoke_workbench.py --source Interview_with_Antti_Pulkkinen.ogv --model face_landmarker.task --output docs/media/workbench.png
+```

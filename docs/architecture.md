@@ -65,6 +65,8 @@ Coordinates compensate for image aspect ratio, invert image Y, reverse depth,
 center the face and normalize outer-eye distance to two units. Depth remains
 monocular model output. Exported meshes do not represent measured millimeters.
 Source Color samples one RGB color per landmark rather than UV texture mapping.
+Textured mode uses raw landmarks as per-triangle UVs and the current RGB image
+as its texture. Filtered landmarks deform the surface without shifting UVs.
 
 ## Avatar
 
@@ -80,8 +82,44 @@ include a recovery command. Model downloads use bounded reads, SHA-256
 verification and atomic replacement. Failed downloads leave existing files
 untouched. Model downloading is explicit, never triggered by starting a stream.
 
-Worker failures become visible studio dialogs. No-face frames clear old
-geometry rather than showing stale tracking. Video EOF leaves the final frame
+Worker failures become visible studio dialogs. No-face frames fade the previous
+view for 350 milliseconds, then clear it. Video EOF leaves the final frame
 available for inspection and export. Worker shutdown releases its detector and
 source in a `finally` block. Capture uses a daemon thread because some camera
 drivers can block inside a native read beyond the shutdown timeout.
+
+## Optional tools
+
+`StudioTools` owns recording, replay, calibration, streaming, inspection and
+playground lifecycle. `studio_panels` builds its views. The inference pipeline
+does not import these GUI modules. `Frame` carries both raw and filtered
+landmarks so UV mapping, comparisons and performance recording share the same
+measurements instead of running duplicate inference.
+
+`SessionRecorder` writes through an eight-frame queue on its own thread.
+`ViewRecorder` encodes through a four-frame queue. Both finalize temporary
+outputs only after successful writing. Writer errors and dropped-frame counts
+are surfaced in the workbench. Shutdown joins active writers with timeouts.
+Open3D render callbacks submit image data, never mutate GUI widgets.
+
+`SessionReader` validates versioned SQLite sessions and limits decoded payloads.
+`Playback` advances source time from a monotonic clock and supports seek, speed,
+pause and looping. It replaces the worker in replay mode. Geometry is rebuilt
+from stored coordinates without detection. Source image and landmark data remain
+local, sensitive recording contents, not anonymized telemetry.
+
+`SmoothingLab` uses independent Kalman and time-adjusted EMA state with bounded
+nose-motion histories. `LandmarkHistory` bounds selected-point history. Neither
+tool changes the pipeline filter. Their charts refresh at five Hz, while the
+playground refreshes at ten Hz. Image-quality checks run at two Hz on a reduced
+face crop. Disabled lab and game tools do not calculate their optional metrics.
+
+`CartoonRig` precomputes displacement fields around explicit image anchors.
+Expressions deform a PNG puppet locally while the emoji remains a 3D sphere
+rig. These are separate presentations, not interchangeable reconstruction tools.
+
+`LocalStream` sends bounded, float-only OSC bundles to loopback with nonblocking
+UDP and a rate cap. `osc_protocol` is dependency-free and packaged unchanged
+with the Blender receiver. The receiver drives matching keys only, restores
+original state on cancellation and explicitly closes sockets and modal timers
+before unregistering.
