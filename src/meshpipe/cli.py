@@ -35,6 +35,16 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--confidence", type=float, default=0.5)
         command.add_argument("--no-smoothing", action="store_true")
         command.add_argument("--loop", action="store_true", help="Loop video input")
+        if name == "run":
+            command.add_argument(
+                "--replay",
+                type=Path,
+                help="Open a recorded .meshpipe performance without inference",
+            )
+            command.add_argument("--cartoon", type=Path, help="Open PNG anchor editor at startup")
+            command.add_argument(
+                "--osc-port", type=int, help="Enable local OSC expression streaming"
+            )
         if name == "benchmark":
             command.add_argument("--frames", type=int, default=300)
             command.add_argument("--warmup", type=int, default=10)
@@ -129,6 +139,9 @@ def main(arguments: list[str] | None = None) -> int:
             smoothing=not options.no_smoothing,
             demo=options.demo,
             loop=options.loop,
+            replay=getattr(options, "replay", None),
+            cartoon=getattr(options, "cartoon", None),
+            osc_port=getattr(options, "osc_port", None),
         )
         if options.command == "benchmark":
             result = json.dumps(benchmark(config, options.frames, options.warmup), indent=2)

@@ -25,7 +25,7 @@ def main() -> None:
     application.initialize()
     studio = Studio(Config(demo=not options.video, source=options.source, model=options.model))
     started = time.monotonic()
-    modes = ["Surface", "Wireframe", "Points", "Source Color", "Emoji"]
+    modes = studio.modes
     previous_mode = -1
     screenshot = False
     prepared = False
@@ -42,7 +42,7 @@ def main() -> None:
                 raise RuntimeError("Studio pipeline failed")
             if studio.frame is None:
                 return redraw
-            index = min(int(elapsed / 1.5), len(modes) - 1)
+            index = min(int(elapsed / 0.9), len(modes) - 1)
             if index != previous_mode:
                 studio._mode_changed(modes[index], index)
                 studio.mode.selected_index = index
@@ -84,7 +84,7 @@ def main() -> None:
             raise RuntimeError("Studio closed before smoke test completed")
         print(f"Studio modes, orbit, pause and export passed. Screenshot at {options.output}")
     finally:
-        studio.worker.close()
+        studio._close()
 
 
 if __name__ == "__main__":

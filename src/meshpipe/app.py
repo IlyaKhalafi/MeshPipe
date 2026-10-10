@@ -1,4 +1,6 @@
 import math
+import sqlite3
+import sys
 import time
 from pathlib import Path
 
@@ -11,23 +13,31 @@ from meshpipe.config import Config
 from meshpipe.export import export_frame
 from meshpipe.pipeline import Frame, Worker
 from meshpipe.scene import FaceScene
+from meshpipe.session import Playback, SessionReader
+from meshpipe.studio_tools import StudioTools
+from meshpipe.widgets import button, combo
 
 
 class Studio:
     def __init__(self, config: Config):
         self.config = config
-        self.worker = Worker(config)
+        self.playback = (
+            Playback(SessionReader(config.replay), loop=config.loop) if config.replay else None
+        )
+        self.worker = None if self.playback else Worker(config)
         self.frame: Frame | None = None
         self.paused = False
         self.spin = False
         self.angle = 0.0
         self.failed = False
+        self.closed = False
+        self.show_tools = True
         self.last_tick = time.monotonic()
         title_font = gui.Application.instance.add_font(
             gui.FontDescription("monospace", gui.FontStyle.BOLD, 28)
         )
         self.window = gui.Application.instance.create_window(
-            "MeshPipe | Face Mesh Studio", 1280, 820
+            "MeshPipe | Face Mesh Studio", 1480, 900
         )
         self.window.set_on_layout(self._layout)
         self.window.set_on_tick_event(self._tick)
@@ -37,7 +47,7 @@ class Studio:
         self.view.set_view_controls(gui.SceneWidget.Controls.ROTATE_CAMERA)
         self.content = FaceScene(self.view.scene)
         self._reset_camera()
-        self.sidebar = gui.Vert(8, gui.Margins(18, 16, 18, 16))
+        self.sidebar = gui.ScrollableVert(8, gui.Margins(18, 16, 18, 16))
         self.sidebar.background_color = gui.Color(0.07, 0.12, 0.15)
         title = gui.Label("MESHPIPE")
         title.font_id = title_font
@@ -48,7 +58,9 @@ class Studio:
         self.preview = gui.ImageWidget()
         self.sidebar.add_child(self.preview)
         source = (
-            "Synthetic demo"
+            "Recorded performance"
+            if config.replay
+            else "Synthetic demo"
             if config.demo
             else (
                 f"Webcam {config.source}" if config.source.isdecimal() else Path(config.source).name
@@ -61,7 +73,16 @@ class Studio:
         self.sidebar.add_child(self.metrics)
         self.sidebar.add_child(gui.Label("02  VIEW"))
         self.mode = gui.Combobox()
-        for item in ["Surface", "Wireframe", "Points", "Source Color", "Emoji"]:
+        self.modes = [
+            "Surface",
+            "Wireframe",
+            "Points",
+            "Source Color",
+            "Textured",
+            "Emoji",
+            "Cartoon",
+        ]
+        for item in self.modes:
             self.mode.add_item(item)
         self.mode.set_on_selection_changed(self._mode_changed)
         self.sidebar.add_child(self.mode)
@@ -71,11 +92,13 @@ class Studio:
             palette.add_item(item)
         palette.set_on_selection_changed(self._palette_changed)
         self.sidebar.add_child(palette)
+        self.sidebar.add_child(combo(["Soft studio", "Flat", "Dramatic"], self._lighting_changed))
         self.sidebar.add_child(gui.Label("03  MOTION"))
-        smooth = gui.Checkbox("Kalman smoothing")
-        smooth.checked = config.smoothing
-        smooth.set_on_checked(self.worker.set_smoothing)
-        self.sidebar.add_child(smooth)
+        self.smooth = gui.Checkbox("Kalman smoothing")
+        self.smooth.checked = config.smoothing
+        self.smooth.enabled = self.worker is not None
+        self.smooth.set_on_checked(self._smoothing_changed)
+        self.sidebar.add_child(self.smooth)
         spin = gui.Checkbox("Auto orbit")
         spin.set_on_checked(self._spin_changed)
         self.sidebar.add_child(spin)
@@ -90,44 +113,80 @@ class Studio:
         controls.add_child(reset)
         controls.add_child(save)
         self.sidebar.add_child(controls)
-        self.sidebar.add_stretch()
+        self.sidebar.add_child(button("Show / hide workbench", self._toggle_tools))
         self.sidebar.add_child(gui.Label("Drag to orbit  /  Scroll to zoom"))
         self.sidebar.add_child(gui.Label("Ctrl + drag to pan"))
         self.sidebar.add_child(gui.Label("Local processing. No frame uploads."))
         self.window.add_child(self.sidebar)
         self.window.add_child(self.view)
-        self.worker.start()
+        self.tools = StudioTools(self)
+        self.window.add_child(self.tools.panel)
+        if self.worker is not None:
+            self.worker.start()
 
     def _layout(self, context) -> None:
         rect = self.window.content_rect
-        sidebar_width = min(350, max(280, int(rect.width * 0.29)))
+        sidebar_width = min(320, max(250, int(rect.width * 0.24)))
+        tools_width = (
+            min(350, max(280, int(rect.width * 0.24)))
+            if self.show_tools and rect.width >= 960
+            else 0
+        )
         self.sidebar.frame = gui.Rect(rect.x, rect.y, sidebar_width, rect.height)
         self.view.frame = gui.Rect(
-            rect.x + sidebar_width, rect.y, max(1, rect.width - sidebar_width), rect.height
+            rect.x + sidebar_width,
+            rect.y,
+            max(1, rect.width - sidebar_width - tools_width),
+            rect.height,
         )
+        self.tools.panel.visible = tools_width > 0
+        self.tools.panel.frame = gui.Rect(
+            rect.get_right() - tools_width, rect.y, tools_width, rect.height
+        )
+
+    def _toggle_tools(self) -> None:
+        self.show_tools = not self.show_tools
+        self.window.set_needs_layout()
 
     def _reset_camera(self) -> None:
         self.angle = 0
         bounds = o3d.geometry.AxisAlignedBoundingBox([-2.5, -2.5, -2.5], [2.5, 2.5, 2.5])
         self.view.setup_camera(45, bounds, [0, 0, 0])
-        self.view.look_at([0, 0, 0], [0, 0.1, 7.5], [0, 1, 0])
+        distance = 13.5 if hasattr(self, "tools") and self.tools.lab_enabled else 7.5
+        self.view.look_at([0, 0, 0], [0, 0.1, distance], [0, 1, 0])
 
     def _mode_changed(self, text: str, index: int) -> None:
         self.content.mode = text
-        if self.frame is not None:
-            self.content.update(self.frame)
+        if hasattr(self, "tools"):
+            self.tools.present(time.monotonic())
 
     def _palette_changed(self, text: str, index: int) -> None:
         self.content.palette = text
-        if self.frame is not None:
-            self.content.update(self.frame)
+        self.tools.present(time.monotonic())
+
+    def _lighting_changed(self, text: str, index: int) -> None:
+        self.content.set_lighting(text)
+        self.tools.present(time.monotonic())
+
+    def _smoothing_changed(self, enabled: bool) -> None:
+        if self.worker is not None:
+            self.worker.set_smoothing(enabled)
 
     def _spin_changed(self, enabled: bool) -> None:
         self.spin = enabled
 
     def _pause(self) -> None:
         self.paused = not self.paused
-        self.worker.set_paused(self.paused)
+        if self.worker is not None:
+            self.worker.set_paused(self.paused)
+        if self.playback:
+            if (
+                self.paused is False
+                and self.playback.position_ms >= self.playback.reader.duration_ms
+            ):
+                self.playback.seek(0)
+            self.playback.paused = self.paused
+            self.playback.last_clock = None
         self.pause_button.text = "Resume" if self.paused else "Pause"
 
     def _export(self) -> None:
@@ -154,13 +213,23 @@ class Studio:
         now = time.monotonic()
         elapsed = min(now - self.last_tick, 0.1)
         self.last_tick = now
-        frame, error, finished = self.worker.take()
+        if self.playback is not None:
+            error, finished = None, False
+            try:
+                frame = self.playback.step(now)
+            except (OSError, ValueError, sqlite3.Error) as failure:
+                frame = None
+                error = str(failure)
+                self.playback.paused = True
+        else:
+            frame, error, finished = self.worker.take()
         if error:
             self.failed = True
             self.status.text = "Pipeline stopped"
             self._message("Input error", error)
-            with self.worker.lock:
-                self.worker.error = None
+            if self.worker is not None:
+                with self.worker.lock:
+                    self.worker.error = None
         if frame is not None:
             self.frame = frame
             preview = frame.rgb.copy()
@@ -176,26 +245,40 @@ class Studio:
                     )
             preview = cv2.resize(preview, (300, round(preview.shape[0] * 300 / preview.shape[1])))
             self.preview.update_image(o3d.geometry.Image(np.ascontiguousarray(preview)))
-            self.content.update(frame)
+            self.tools.on_frame(frame, now)
             self.status.text = "Tracking face" if frame.vertices is not None else "No face detected"
             self.metrics.text = f"{frame.fps:.1f} FPS  /  {frame.processing_ms:.1f} ms processing"
         elif finished and not self.failed:
             self.status.text = "Video ended. Last frame available for export."
         if self.failed:
             self.status.text = "Pipeline stopped"
+        tools_redraw = self.tools.tick(now)
         if self.spin and not self.paused:
             self.angle += elapsed * 0.3
+            distance = 13.5 if self.tools.lab_enabled else 7.5
             self.view.look_at(
-                [0, 0, 0], [7.5 * math.sin(self.angle), 0.3, 7.5 * math.cos(self.angle)], [0, 1, 0]
+                [0, 0, 0],
+                [distance * math.sin(self.angle), 0.3, distance * math.cos(self.angle)],
+                [0, 1, 0],
             )
         return (
             frame is not None
+            or tools_redraw
             or (self.spin and not self.paused)
             or self.status.text != previous_status
         )
 
     def _close(self) -> bool:
-        self.worker.close()
+        if self.closed:
+            return True
+        self.closed = True
+        if self.worker is not None:
+            self.worker.close()
+        for error in self.tools.close():
+            print(f"MeshPipe shutdown warning: {error}", file=sys.stderr)
+        if self.playback:
+            self.playback.reader.close()
+            self.playback = None
         return True
 
 
@@ -203,5 +286,7 @@ def run_studio(config: Config) -> None:
     application = gui.Application.instance
     application.initialize()
     studio = Studio(config)
-    application.run()
-    studio.worker.close()
+    try:
+        application.run()
+    finally:
+        studio._close()
