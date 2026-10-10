@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+  "python": "3.11.15",
+  "cpu": "x86_64",
+  "source": "/tmp/meshpipe-interview.ogv",
+  "width": 640,
+  "processed_size": [
+    640,
+    360
+  ],
+  "smoothing": true,
+  "frames": 300,
+  "faces_detected": 300,
+  "warmup_frames": 30,
+  "throughput_fps": 48.07,
+  "processing_mean_ms": 19.071,
+  "processing_p95_ms": 26.967,
+  "end_to_end_mean_ms": 20.803,
+  "scope": "Capture/decode + CPU processing, excludes GUI and rendering; no pacing",
+  "cpu_model": "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+  "measured_on": "2026-10-10",
+  "input_description": "NASA recorded interview with Antti Pulkkinen, original 1280x720, Theora codec"
+}

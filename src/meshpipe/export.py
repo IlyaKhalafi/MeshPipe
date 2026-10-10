@@ -9,7 +9,7 @@ from meshpipe.pipeline import Frame
 
 
 def export_frame(frame: Frame, directory: Path = Path("exports")) -> tuple[Path, Path]:
-    """Write inspectable PLY geometry and raw normalized landmark metadata."""
+    """Write inspectable PLY geometry and normalized landmark metadata."""
     if frame.vertices is None or frame.landmarks is None:
         raise ValueError("No tracked face available to export")
     directory.mkdir(parents=True, exist_ok=True)

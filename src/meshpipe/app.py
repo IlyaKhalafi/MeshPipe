@@ -150,6 +150,7 @@ class Studio:
         self.window.show_dialog(dialog)
 
     def _tick(self) -> bool:
+        previous_status = self.status.text
         now = time.monotonic()
         elapsed = min(now - self.last_tick, 0.1)
         self.last_tick = now
@@ -180,12 +181,18 @@ class Studio:
             self.metrics.text = f"{frame.fps:.1f} FPS  /  {frame.processing_ms:.1f} ms processing"
         elif finished and not self.failed:
             self.status.text = "Video ended. Last frame available for export."
+        if self.failed:
+            self.status.text = "Pipeline stopped"
         if self.spin and not self.paused:
             self.angle += elapsed * 0.3
             self.view.look_at(
                 [0, 0, 0], [7.5 * math.sin(self.angle), 0.3, 7.5 * math.cos(self.angle)], [0, 1, 0]
             )
-        return frame is not None or self.spin
+        return (
+            frame is not None
+            or (self.spin and not self.paused)
+            or self.status.text != previous_status
+        )
 
     def _close(self) -> bool:
         self.worker.close()

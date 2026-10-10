@@ -136,7 +136,7 @@ class FaceScene:
         root[:3, :3] = rotation
         self.scene.set_geometry_transform("head", root)
         expressions = frame.expressions
-        for side, sign in [("left", -1), ("right", 1)]:
+        for side, sign in [("left", 1), ("right", -1)]:
             blink = np.clip(expressions.get(f"eyeBlink{side.title()}", 0), 0, 1)
             eye = np.eye(4)
             eye[:3, :3] = np.diag([0.15, max(0.025, 0.23 * (1 - blink)), 0.075])
