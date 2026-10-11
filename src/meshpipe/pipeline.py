@@ -24,6 +24,7 @@ class Frame:
     processing_ms: float
     fps: float = 0.0
     raw_landmarks: NDArray | None = None
+    source_available: bool = True
 
 
 class Processor:

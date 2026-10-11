@@ -20,7 +20,7 @@ from meshpipe.media import ViewRecorder
 from meshpipe.playground import ExpressionGame, GestureController
 from meshpipe.pose import head_angles
 from meshpipe.quality import Recovery, assess
-from meshpipe.session import Playback, SessionReader, SessionRecorder
+from meshpipe.session import Playback, SessionReader, SessionRecorder, private_preview
 from meshpipe.stream import LocalStream
 from meshpipe.studio_panels import build_create, build_inspect, build_play
 
@@ -63,6 +63,7 @@ class StudioTools:
         self.render_frame = None
         self.editor: CartoonEditor | None = None
         self.closed = False
+        self.record_images = not studio.config.landmark_only
         self.panel = gui.Vert(10, gui.Margins(14, 16, 14, 10))
         self.panel.background_color = gui.Color(0.055, 0.095, 0.115)
         heading = gui.Label("WORKBENCH")
@@ -111,14 +112,41 @@ class StudioTools:
         if self.finalizing_session:
             raise ValueError("Previous performance is still saving")
         if self.session is None:
-            self.session = SessionRecorder(export_path("performance", ".meshpipe"))
+            source_kind = (
+                "replay"
+                if self.studio.playback
+                else ("synthetic" if self.studio.config.demo else "tracked")
+            )
+            self.session = SessionRecorder(
+                export_path("performance", ".meshpipe"),
+                save_images=self.record_images
+                and (self.studio.frame is None or self.studio.frame.source_available),
+                source_kind=source_kind,
+            )
             self.session_button.text = "Stop performance"
-            self.notice.text = "Recording tracking and source frames"
+            self.notice.text = (
+                "Recording source images and motion"
+                if self.session.save_images
+                else "Recording landmarks only. No source images saved."
+            )
         else:
             self.session.stopping.set()
             self.finalizing_session, self.session = self.session, None
             self.session_button.text = "Saving performance..."
             self.session_button.enabled = False
+
+    def _privacy(self, enabled: bool) -> None:
+        if self.session or self.finalizing_session or self.capture:
+            self.privacy_checkbox.checked = not self.record_images
+            raise ValueError("Finish recording before changing privacy mode")
+        self.record_images = not enabled
+        if enabled and self.studio.content.mode in {"Textured", "Source Color"}:
+            self.studio.mode.selected_index = self.studio.modes.index("Surface")
+            self.studio._mode_changed("Surface", self.studio.modes.index("Surface"))
+        if self.studio.frame is not None:
+            self.studio._update_preview(self.studio.frame)
+            self.present(time.monotonic())
+        self.notice.text = "Landmark-only data is still sensitive facial motion."
 
     def _toggle_capture(self) -> None:
         if self.capture is not None:
@@ -406,7 +434,11 @@ class StudioTools:
             if self.calibration_enabled
             else frame.expressions
         )
-        self.render_frame = replace(frame, expressions=scores)
+        self.render_frame = replace(
+            frame,
+            expressions=scores,
+            source_available=frame.source_available and self.record_images,
+        )
         self.recovery.update(self.render_frame, clock)
         if self.calibrating and frame.vertices is not None:
             self.samples.append(frame.expressions.copy())
@@ -553,7 +585,11 @@ class StudioTools:
         recorder = self.capture
         token = self.capture_token
         frame = self.studio.frame
-        source = frame.rgb
+        source = (
+            frame.rgb
+            if frame.source_available and self.record_images
+            else private_preview(frame.rgb.shape[1], frame.rgb.shape[0])
+        )
         timestamp = clock - self.capture_started
         self.capture_last = clock
         self.capture_pending = True
@@ -565,6 +601,8 @@ class StudioTools:
             else "Live tracking"
         )
         title += " / " + self.studio.content.mode
+        if not frame.source_available or not self.record_images:
+            title += " / No source images"
 
         def rendered(image):
             if not self.closed and token == self.capture_token:

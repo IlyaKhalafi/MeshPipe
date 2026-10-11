@@ -49,6 +49,54 @@ def test_face_loss_roundtrip(tmp_path):
     reader.close()
 
 
+def test_landmark_only_session_stores_no_image_bytes(tmp_path):
+    path = tmp_path / "private.meshpipe"
+    original = make_frame()
+    recorder = SessionRecorder(path, save_images=False, source_kind="synthetic")
+    recorder.submit(original)
+    recorder.close()
+    with sqlite3.connect(path) as connection:
+        assert connection.execute("SELECT rgb FROM frames").fetchone() == (None,)
+    reader = SessionReader(path)
+    try:
+        replay = reader.frame(0)
+        assert not reader.has_images and not replay.source_available
+        assert reader.source_kind == "synthetic"
+        np.testing.assert_allclose(replay.landmarks, original.landmarks, atol=1e-7)
+        assert not np.array_equal(replay.rgb, original.rgb)
+        assert replay.vertices is not None
+    finally:
+        reader.close()
+
+
+def test_legacy_session_remains_readable(tmp_path):
+    path = tmp_path / "legacy.meshpipe"
+    record(path, [make_frame()])
+    with sqlite3.connect(path) as connection:
+        connection.execute("PRAGMA user_version=1")
+        connection.execute("DROP TABLE metadata")
+    reader = SessionReader(path)
+    try:
+        assert reader.has_images and reader.frame(0).source_available
+    finally:
+        reader.close()
+
+
+def test_private_session_rejects_unexpected_image_payload(tmp_path):
+    path = tmp_path / "private.meshpipe"
+    recorder = SessionRecorder(path, save_images=False)
+    recorder.submit(make_frame())
+    recorder.close()
+    with sqlite3.connect(path) as connection:
+        connection.execute("UPDATE frames SET rgb=?", (b"unexpected",))
+    reader = SessionReader(path)
+    try:
+        with pytest.raises(ValueError, match="unexpected"):
+            reader.frame(0)
+    finally:
+        reader.close()
+
+
 def test_playback_seek_pause_speed_loop(tmp_path):
     path = tmp_path / "take.meshpipe"
     record(path, [make_frame(index * 100) for index in range(4)])

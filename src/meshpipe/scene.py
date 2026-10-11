@@ -133,6 +133,9 @@ class FaceScene:
         if frame.vertices is None:
             self.clear()
             return
+        if not frame.source_available and self.mode in {"Textured", "Source Color"}:
+            self.clear()
+            return
         avatar = self.mode == "Emoji"
         self._show_avatar(avatar)
         desired = "mouth" if avatar else "face"

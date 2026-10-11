@@ -16,9 +16,13 @@ def build_create(tools) -> None:
     tools.capture_button = button("Record view", tools._safe(tools._toggle_capture))
     tools.capture_format = combo(["MP4", "GIF"], lambda *_: None)
     tools.capture_status = gui.Label("GIF up to 10 s. MP4 up to 10 min.")
+    tools.privacy_checkbox = gui.Checkbox("Landmark-only recording / hide source")
+    tools.privacy_checkbox.checked = not tools.record_images
+    tools.privacy_checkbox.set_on_checked(tools._safe(tools._privacy))
     panel.add_child(
         section(
             "01  RECORD",
+            tools.privacy_checkbox,
             tools.session_button,
             row(tools.capture_format, tools.capture_button),
             tools.capture_status,

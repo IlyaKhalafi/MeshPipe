@@ -37,6 +37,9 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--loop", action="store_true", help="Loop video input")
         if name == "run":
             command.add_argument(
+                "--landmark-only", action="store_true", help="Record motion without source images"
+            )
+            command.add_argument(
                 "--replay",
                 type=Path,
                 help="Open a recorded .meshpipe performance without inference",
@@ -142,6 +145,7 @@ def main(arguments: list[str] | None = None) -> int:
             replay=getattr(options, "replay", None),
             cartoon=getattr(options, "cartoon", None),
             osc_port=getattr(options, "osc_port", None),
+            landmark_only=getattr(options, "landmark_only", False),
         )
         if options.command == "benchmark":
             result = json.dumps(benchmark(config, options.frames, options.warmup), indent=2)

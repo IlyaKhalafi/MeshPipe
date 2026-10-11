@@ -15,6 +15,7 @@ class Config:
     replay: Path | None = None
     cartoon: Path | None = None
     osc_port: int | None = None
+    landmark_only: bool = False
 
     def __post_init__(self) -> None:
         if self.width < 160:

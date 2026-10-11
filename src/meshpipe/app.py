@@ -13,7 +13,7 @@ from meshpipe.config import Config
 from meshpipe.export import export_frame
 from meshpipe.pipeline import Frame, Worker
 from meshpipe.scene import FaceScene
-from meshpipe.session import Playback, SessionReader
+from meshpipe.session import Playback, SessionReader, private_preview
 from meshpipe.studio_tools import StudioTools
 from meshpipe.widgets import button, combo
 
@@ -156,6 +156,19 @@ class Studio:
         self.view.look_at([0, 0, 0], [0, 0.1, distance], [0, 1, 0])
 
     def _mode_changed(self, text: str, index: int) -> None:
+        if (
+            hasattr(self, "tools")
+            and text in {"Textured", "Source Color"}
+            and (
+                not self.tools.record_images
+                or (self.frame is not None and not self.frame.source_available)
+            )
+        ):
+            self.mode.selected_index = self.modes.index("Surface")
+            self._message(
+                "Source images unavailable", "Landmark-only mode cannot show source textures."
+            )
+            text = "Surface"
         self.content.mode = text
         if hasattr(self, "tools"):
             self.tools.present(time.monotonic())
@@ -232,19 +245,7 @@ class Studio:
                     self.worker.error = None
         if frame is not None:
             self.frame = frame
-            preview = frame.rgb.copy()
-            if frame.landmarks is not None:
-                height, width = preview.shape[:2]
-                for point in frame.landmarks:
-                    cv2.circle(
-                        preview,
-                        (round(point[0] * width), round(point[1] * height)),
-                        1,
-                        (70, 240, 181),
-                        -1,
-                    )
-            preview = cv2.resize(preview, (300, round(preview.shape[0] * 300 / preview.shape[1])))
-            self.preview.update_image(o3d.geometry.Image(np.ascontiguousarray(preview)))
+            self._update_preview(frame)
             self.tools.on_frame(frame, now)
             self.status.text = "Tracking face" if frame.vertices is not None else "No face detected"
             self.metrics.text = f"{frame.fps:.1f} FPS  /  {frame.processing_ms:.1f} ms processing"
@@ -267,6 +268,35 @@ class Studio:
             or (self.spin and not self.paused)
             or self.status.text != previous_status
         )
+
+    def _update_preview(self, frame: Frame) -> None:
+        visible = frame.source_available and self.tools.record_images
+        preview = (
+            frame.rgb.copy() if visible else private_preview(frame.rgb.shape[1], frame.rgb.shape[0])
+        )
+        if not visible:
+            cv2.putText(
+                preview,
+                "NO SOURCE IMAGES",
+                (8, 25),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.45,
+                (85, 210, 180),
+                1,
+                cv2.LINE_AA,
+            )
+        if frame.landmarks is not None:
+            height, width = preview.shape[:2]
+            for point in frame.landmarks:
+                cv2.circle(
+                    preview,
+                    (round(point[0] * width), round(point[1] * height)),
+                    1,
+                    (70, 240, 181),
+                    -1,
+                )
+        preview = cv2.resize(preview, (300, round(preview.shape[0] * 300 / preview.shape[1])))
+        self.preview.update_image(o3d.geometry.Image(np.ascontiguousarray(preview)))
 
     def _close(self) -> bool:
         if self.closed:

@@ -56,7 +56,11 @@ meshpipe run 0 --osc-port 9000
 python tools/build_blender_addon.py
 ```
 
-Performance files contain full source images and facial data. Keep them private
+Use `meshpipe run 0 --landmark-only` or the recording privacy checkbox to hide
+source previews and save motion without source images. Textured modes are disabled
+when images are unavailable. This reduces stored data, not biometric sensitivity.
+
+Default performance files contain full source images and facial data. Keep them private
 unless every recorded person agrees to sharing. Local recordings and exports
 are ignored by Git.
 

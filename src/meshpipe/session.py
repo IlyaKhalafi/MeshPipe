@@ -15,9 +15,13 @@ import numpy as np
 from meshpipe.geometry import normals, sample_colors, to_vertices, topology
 from meshpipe.pipeline import Frame
 
-VERSION = 1
+VERSION = 2
 MAX_FRAMES = 100_000
 MAX_BLOB_BYTES = 16 * 1024 * 1024
+
+
+def private_preview(width: int, height: int) -> np.ndarray:
+    return np.full((height, width, 3), [9, 17, 22], dtype=np.uint8)
 
 
 def _encode_points(points: np.ndarray | None) -> bytes | None:
@@ -47,8 +51,12 @@ def _inflate(data: bytes) -> bytes:
 
 
 class SessionRecorder:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, *, save_images: bool = True, source_kind: str = "tracked"):
+        if source_kind not in {"tracked", "synthetic", "replay"}:
+            raise ValueError("Unknown performance source kind")
         self.path = Path(path)
+        self.save_images = save_images
+        self.source_kind = source_kind
         if self.path.exists():
             raise ValueError("Session destination already exists")
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,6 +87,14 @@ class SessionRecorder:
             connection = sqlite3.connect(self.partial)
             connection.execute("PRAGMA journal_mode=DELETE")
             connection.execute(f"PRAGMA user_version={VERSION}")
+            connection.execute("CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT)")
+            connection.executemany(
+                "INSERT INTO metadata VALUES (?, ?)",
+                [
+                    ("images", "yes" if self.save_images else "no"),
+                    ("source_kind", self.source_kind),
+                ],
+            )
             connection.execute(
                 "CREATE TABLE frames (timestamp INTEGER PRIMARY KEY, width INTEGER, "
                 "height INTEGER, rgb BLOB, landmarks BLOB, raw BLOB, expressions TEXT, "
@@ -105,7 +121,7 @@ class SessionRecorder:
                         timestamp,
                         width,
                         height,
-                        zlib.compress(frame.rgb.tobytes(), 1),
+                        zlib.compress(frame.rgb.tobytes(), 1) if self.save_images else None,
                         _encode_points(frame.landmarks),
                         _encode_points(frame.raw_landmarks),
                         json.dumps(frame.expressions, allow_nan=False),
@@ -152,8 +168,19 @@ class SessionReader:
             raise ValueError("Cannot open MeshPipe session database") from error
         try:
             self.connection.execute("PRAGMA query_only=ON")
-            if self.connection.execute("PRAGMA user_version").fetchone()[0] != VERSION:
+            version = self.connection.execute("PRAGMA user_version").fetchone()[0]
+            if version not in {1, VERSION}:
                 raise ValueError("Unsupported MeshPipe session version")
+            self.has_images = True
+            self.source_kind = "unknown"
+            if version == VERSION:
+                metadata = dict(self.connection.execute("SELECT key, value FROM metadata LIMIT 16"))
+                if metadata.get("images") not in {"yes", "no"} or metadata.get(
+                    "source_kind"
+                ) not in {"tracked", "synthetic", "replay"}:
+                    raise ValueError("Invalid session metadata")
+                self.has_images = metadata["images"] == "yes"
+                self.source_kind = metadata["source_kind"]
             count = self.connection.execute("SELECT COUNT(*) FROM frames").fetchone()[0]
             if not 1 <= count <= MAX_FRAMES:
                 raise ValueError("Session has no frames or exceeds safety limit")
@@ -195,12 +222,17 @@ class SessionReader:
             or not 1 <= height <= 4096
         ):
             raise ValueError("Invalid session image dimensions")
-        if not isinstance(data, bytes) or len(data) > MAX_BLOB_BYTES:
-            raise ValueError("Invalid session image")
-        decoded = _inflate(data)
-        if len(decoded) != width * height * 3:
-            raise ValueError("Session image dimensions do not match payload")
-        rgb = np.frombuffer(decoded, dtype=np.uint8).reshape(height, width, 3).copy()
+        if self.has_images:
+            if not isinstance(data, bytes) or len(data) > MAX_BLOB_BYTES:
+                raise ValueError("Invalid session image")
+            decoded = _inflate(data)
+            if len(decoded) != width * height * 3:
+                raise ValueError("Session image dimensions do not match payload")
+            rgb = np.frombuffer(decoded, dtype=np.uint8).reshape(height, width, 3).copy()
+        else:
+            if data is not None:
+                raise ValueError("Landmark-only session contains unexpected image data")
+            rgb = private_preview(width, height)
         landmarks = _decode_points(points)
         raw_landmarks = _decode_points(raw)
         if not isinstance(expressions, str) or len(expressions) > 32_768:
@@ -240,6 +272,7 @@ class SessionReader:
             scores,
             processing,
             raw_landmarks=raw_landmarks,
+            source_available=self.has_images,
         )
 
     def close(self) -> None:
