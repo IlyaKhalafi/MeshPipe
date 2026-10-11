@@ -32,3 +32,20 @@ Blend performance synchronizes a second take by normalized duration and combines
 landmarks and expressions. Source images always come from the primary take.
 Save edit writes a sidecar JSON. Load the same source and blend take before
 loading that sidecar. Blend paths are deliberately not embedded or auto-opened.
+
+## Custom GLB avatars
+
+Motion includes a bounded glTF 2.0 binary loader for morph-target head meshes.
+Export triangle primitives with named morphs in `mesh.extras.targetNames`.
+Channels matching MediaPipe blendshape names work automatically. Map other target
+names to channels such as `jawOpen`, `eyeBlinkLeft` and `mouthSmileLeft`, then
+save a rig preset. Head rotation follows tracking and the viewport keeps its
+orbit and zoom. Rest mesh is centered and scaled for the studio.
+
+Supported data includes multiple meshes, node transforms, triangle indices,
+POSITION morphs, opaque base colors and embedded textures with TEXCOORD_0.
+Limits include a 32 MiB file, 100000 total vertices, 64 morphs per primitive and
+2048-pixel textures. External resources, skeleton skins, sparse accessors,
+compression and required extensions fail with an explicit message. Export a
+morph-only head rather than a complete skinned humanoid. This is expression
+retargeting, not automatic rig discovery or full-body animation.

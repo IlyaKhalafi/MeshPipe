@@ -47,6 +47,7 @@ class FaceScene:
         self.highlight: tuple[int, ...] = ()
         self.selected: int | None = None
         self.cartoon = None
+        self.custom_avatar = None
         self.lit = True
         self.mesh = o3d.geometry.TriangleMesh()
         self.mesh.triangles = o3d.utility.Vector3iVector(topology().copy())
@@ -140,6 +141,8 @@ class FaceScene:
         self._show_avatar(avatar)
         desired = "mouth" if avatar else "face"
         keep = {desired, "highlight", "selected"}
+        if self.mode == "Custom Avatar":
+            keep = {name for name in self.dynamic if name.startswith("custom-")}
         for name in self.dynamic - keep:
             self.scene.remove_geometry(name)
         self.dynamic.intersection_update(keep)
@@ -153,6 +156,30 @@ class FaceScene:
                 self.scene.modify_geometry_material(name, material(self._fade_color(color)))
             self._update_avatar(frame)
             self._remove_selection()
+            return
+        if self.mode == "Custom Avatar":
+            if self.custom_avatar is None:
+                self.clear()
+                return
+            from meshpipe.geometry import normals
+
+            root = np.eye(4)
+            root[:3, :3] = head_rotation(frame.vertices)
+            for index, part in enumerate(self.custom_avatar.parts):
+                vertices = self.custom_avatar.deform(part, frame.expressions)
+                mesh = o3d.geometry.TriangleMesh(
+                    o3d.utility.Vector3dVector(vertices), o3d.utility.Vector3iVector(part.triangles)
+                )
+                mesh.vertex_normals = o3d.utility.Vector3dVector(normals(vertices, part.triangles))
+                record = material(self._fade_color(part.color))
+                if part.image is not None:
+                    mesh.triangle_uvs = o3d.utility.Vector2dVector(
+                        part.uv[part.triangles.ravel()] * [1, -1] + [0, 1]
+                    )
+                    record.albedo_img = o3d.geometry.Image(part.image)
+                name = f"custom-{index}"
+                self._replace(name, mesh, record)
+                self.scene.set_geometry_transform(name, root)
             return
         if self.mode == "Cartoon":
             self._update_cartoon(frame)

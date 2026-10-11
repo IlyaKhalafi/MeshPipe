@@ -1,5 +1,6 @@
 from open3d.visualization import gui
 
+from meshpipe.avatar import load_glb
 from meshpipe.motion import EditedReader, MotionEdit
 from meshpipe.quality import Recovery
 from meshpipe.widgets import button, row, section, slider
@@ -62,6 +63,69 @@ class AdvancedTools:
         )
         tools.tabs.add_tab("Motion", panel)
         self.panel = panel
+        self.target = gui.Combobox()
+        self.rig_channel = gui.TextEdit()
+        self.rig_channel.text_value = "jawOpen"
+        self.rig_strength = slider(0, 3, 1, lambda _: None)
+        panel.add_child(
+            section(
+                "02  CUSTOM GLB AVATAR",
+                gui.Label("Named morph-target head. No skeleton required."),
+                button("Load GLB", lambda: tools._file("Load avatar", ".glb", self.load_avatar)),
+                gui.Label("Morph target"),
+                self.target,
+                gui.Label("Expression channel"),
+                self.rig_channel,
+                gui.Label("Mapping strength"),
+                self.rig_strength,
+                button("Map target", safe(self.map_target)),
+                row(
+                    button("Save rig", safe(self.save_rig)),
+                    button(
+                        "Load rig",
+                        lambda: tools._file(
+                            "Load rig preset", ".json", lambda path: self.avatar().load_preset(path)
+                        ),
+                    ),
+                ),
+            )
+        )
+
+    def avatar(self):
+        avatar = self.tools.studio.content.custom_avatar
+        if avatar is None:
+            raise ValueError("Load a GLB avatar first")
+        return avatar
+
+    def load_avatar(self, path):
+        avatar = load_glb(path)
+        self.tools.studio.content.custom_avatar = avatar
+        self.target.clear_items()
+        for name in avatar.names:
+            self.target.add_item(name)
+        studio = self.tools.studio
+        studio.mode.selected_index = studio.modes.index("Custom Avatar")
+        studio._mode_changed("Custom Avatar", studio.mode.selected_index)
+        self.tools.notice.text = f"Avatar loaded. {len(avatar.names)} morph targets."
+
+    def map_target(self):
+        avatar = self.avatar()
+        if not avatar.names:
+            raise ValueError("GLB has no named expression morph targets")
+        mapping = dict(avatar.mapping)
+        mapping[self.target.selected_text] = {
+            "channel": self.rig_channel.text_value,
+            "strength": self.rig_strength.double_value,
+        }
+        avatar.set_mapping(mapping)
+        self.tools.notice.text = "Rig mapping updated"
+
+    def save_rig(self):
+        from meshpipe.studio_tools import export_path
+
+        path = export_path("avatar-rig", ".json")
+        self.avatar().save_preset(path)
+        self.tools.notice.text = f"Saved {path.name}"
 
     def reader(self):
         playback = self.tools.studio.playback

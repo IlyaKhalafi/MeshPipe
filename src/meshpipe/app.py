@@ -81,6 +81,7 @@ class Studio:
             "Textured",
             "Emoji",
             "Cartoon",
+            "Custom Avatar",
         ]
         for item in self.modes:
             self.mode.add_item(item)
