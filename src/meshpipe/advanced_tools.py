@@ -139,6 +139,7 @@ class AdvancedTools:
                 "02  CUSTOM GLB AVATAR",
                 gui.Label("Named morph-target head. No skeleton required."),
                 button("Load GLB", lambda: tools._file("Load avatar", ".glb", self.load_avatar)),
+                button("Try canonical morph head", safe(self.builtin_avatar)),
                 gui.Label("Morph target"),
                 self.target,
                 gui.Label("Expression channel"),
@@ -242,6 +243,12 @@ class AdvancedTools:
         studio.mode.selected_index = studio.modes.index("Custom Avatar")
         studio._mode_changed("Custom Avatar", studio.mode.selected_index)
         self.tools.notice.text = f"Avatar loaded. {len(avatar.names)} morph targets."
+
+    def builtin_avatar(self):
+        from importlib.resources import as_file, files
+
+        with as_file(files("meshpipe").joinpath("assets/example-head.glb")) as path:
+            self.load_avatar(path)
 
     def map_target(self):
         avatar = self.avatar()

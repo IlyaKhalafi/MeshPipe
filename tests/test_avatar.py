@@ -82,3 +82,13 @@ def test_truncated_glb(tmp_path):
     path.write_bytes(b"glTF")
     with pytest.raises(ValueError):
         load_glb(path)
+
+
+def test_bundled_morph_head():
+    from importlib.resources import as_file, files
+
+    with as_file(files("meshpipe").joinpath("assets/example-head.glb")) as path:
+        avatar = load_glb(path)
+    assert len(avatar.names) == 5
+    for part in avatar.parts:
+        assert np.isfinite(avatar.deform(part, {"jawOpen": 1})).all()

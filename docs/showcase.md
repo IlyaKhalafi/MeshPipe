@@ -74,3 +74,13 @@ python -m http.server 8000 --directory docs/demo
 
 Open localhost on port 8000. The Chrome smoke tool checks playback, character
 switching and shared raw versus Kalman views on desktop and mobile layouts.
+
+## Advanced native validation
+
+`tools/smoke_advanced.py` exercises landmark-only recording, adaptive CPU,
+non-destructive editing, take blending, background exports, GLB presets,
+heatmaps and accessory anchors using the same genuine interview.
+
+```bash
+python tools/smoke_advanced.py Interview_with_Antti_Pulkkinen.ogv --model face_landmarker.task
+```

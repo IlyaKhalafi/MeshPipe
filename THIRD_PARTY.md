@@ -12,6 +12,11 @@ The full license accompanies the asset in `src/meshpipe/assets/LICENSE.apache`.
 MeshPipe generates its own triangles with SciPy rather than distributing the
 original model's faces.
 
+`src/meshpipe/assets/example-head.glb` derives a normalized head and procedural
+expression morphs from those same coordinates. Its canonical geometry remains
+subject to the accompanying Apache License 2.0. The builder lives in
+`tools/build_avatar_example.py`.
+
 ## Showcase input
 
 Both showcases use actual recorded speech and facial motion from NASA's

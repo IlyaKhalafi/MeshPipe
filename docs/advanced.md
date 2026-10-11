@@ -35,7 +35,8 @@ loading that sidecar. Blend paths are deliberately not embedded or auto-opened.
 
 ## Custom GLB avatars
 
-Motion includes a bounded glTF 2.0 binary loader for morph-target head meshes.
+Style includes a bounded glTF 2.0 binary loader for morph-target head meshes.
+Try canonical morph head loads a bundled example without downloading an avatar.
 Export triangle primitives with named morphs in `mesh.extras.targetNames`.
 Channels matching MediaPipe blendshape names work automatically. Map other target
 names to channels such as `jawOpen`, `eyeBlinkLeft` and `mouthSmileLeft`, then
@@ -68,7 +69,7 @@ and a compatible rig. The export protocol is tested without Blender.
 
 ## Expression displacement heatmap
 
-Hold a comfortable neutral face and capture neutral in Motion. Heatmap colors
+Hold a comfortable neutral face and capture neutral in Style. Heatmap colors
 show per-vertex displacement as a fraction of eye distance. Cyan marks little
 movement, amber stronger movement and coral values near the color limit.
 Stable eye and nose anchors estimate a rigid alignment against the reference,
@@ -78,7 +79,7 @@ These geometry measurements are not emotion recognition or medical analysis.
 
 ## Face-attached accessories
 
-Choose Glasses, Crown or Brows in Motion, set the attachment landmark, scale and
+Choose Glasses, Crown or Brows in Style, set the attachment landmark, scale and
 local x, y and depth offsets, then apply. Glasses default to the upper nose at
 168. Crown works well at forehead landmark 10. Save and load anchor presets.
 Geometry follows the tracked head basis and attachment point.

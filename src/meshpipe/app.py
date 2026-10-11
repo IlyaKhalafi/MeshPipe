@@ -159,6 +159,10 @@ class Studio:
         self.view.look_at([0, 0, 0], [0, 0.1, distance], [0, 1, 0])
 
     def _mode_changed(self, text: str, index: int) -> None:
+        if text == "Custom Avatar" and self.content.custom_avatar is None:
+            self.mode.selected_index = self.modes.index("Surface")
+            self._message("Avatar needed", "Load a GLB or try the bundled head in Style first.")
+            text = "Surface"
         if text == "Heatmap" and self.content.heatmap.reference is None:
             self.mode.selected_index = self.modes.index("Surface")
             self._message("Neutral reference needed", "Capture neutral geometry in Motion first.")
@@ -179,6 +183,8 @@ class Studio:
         self.content.mode = text
         if hasattr(self, "tools"):
             self.tools.present(time.monotonic())
+        self.view.force_redraw()
+        self.window.post_redraw()
 
     def _palette_changed(self, text: str, index: int) -> None:
         self.content.palette = text
