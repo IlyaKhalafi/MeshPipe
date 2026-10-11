@@ -40,7 +40,7 @@ def main():
             recorder.close()
         reader = SessionReader(path)
         try:
-            export_showcase(reader, options.output, options.frames)
+            export_showcase(reader, options.output, options.frames, signal_label="Kalman")
             print(f"Saved {len(reader.timestamps)} tracked frames to {options.output}")
         finally:
             reader.close()

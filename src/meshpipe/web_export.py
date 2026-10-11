@@ -6,14 +6,21 @@ from pathlib import Path
 import numpy as np
 
 from meshpipe.geometry import to_vertices, topology
+from meshpipe.motion import MotionEdit
 from meshpipe.pose import head_rotation
 
 CHANNELS = ["jawOpen", "mouthSmileLeft", "mouthSmileRight", "eyeBlinkLeft", "eyeBlinkRight"]
 
 
-def showcase_payload(reader, max_frames=360):
+def showcase_payload(reader, max_frames=360, signal_label=None):
     if not 2 <= max_frames <= 900:
         raise ValueError("Browser showcase frame budget must be between 2 and 900")
+    if signal_label is None:
+        signal_label = (
+            "Edited" if getattr(reader, "edit", MotionEdit()) != MotionEdit() else "Processed"
+        )
+    if signal_label not in {"Edited", "Processed", "Kalman"}:
+        raise ValueError("Invalid showcase signal label")
     indices = np.unique(
         np.linspace(0, len(reader.timestamps) - 1, min(max_frames, len(reader.timestamps))).astype(
             int
@@ -44,6 +51,7 @@ def showcase_payload(reader, max_frames=360):
         "version": 1,
         "scale": 10000,
         "source_kind": reader.source_kind,
+        "signal_label": signal_label,
         "duration": reader.duration_ms,
         "triangles": topology().ravel().tolist(),
         "channels": CHANNELS,
@@ -51,8 +59,8 @@ def showcase_payload(reader, max_frames=360):
     }
 
 
-def export_showcase(reader, directory: Path, max_frames=360):
-    text = json.dumps(showcase_payload(reader, max_frames), separators=(",", ":"))
+def export_showcase(reader, directory: Path, max_frames=360, signal_label=None):
+    text = json.dumps(showcase_payload(reader, max_frames, signal_label), separators=(",", ":"))
     if len(text) > 16 * 1024 * 1024:
         raise ValueError("Showcase motion exceeds 16 MiB. Reduce frame budget.")
     directory.mkdir(parents=True, exist_ok=True)

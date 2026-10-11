@@ -34,7 +34,7 @@ class AdaptiveBudget:
         self.samples = 0
         if self.mean_ms > self.budget_ms * 1.15:
             self.width = max(160, int(self.width * 0.85) // 8 * 8)
-            self.fps = max(5, min(self.maximum_fps, 800 / self.mean_ms))
+            self.fps = max(min(5, self.maximum_fps), min(self.maximum_fps, 800 / self.mean_ms))
         elif self.mean_ms < self.budget_ms * 0.7:
             self.width = min(self.maximum_width, int(self.width * 1.1 + 8) // 8 * 8)
             self.fps = min(self.maximum_fps, self.fps * 1.1)

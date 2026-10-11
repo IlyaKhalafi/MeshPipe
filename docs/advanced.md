@@ -106,6 +106,8 @@ side-by-side views use one timeline. Motion is downsampled to at most 360 frames
 by default, not rerun through MediaPipe in the browser. Source provenance labels
 distinguish genuine tracking from synthetic demos. Facial motion remains
 sensitive even without images. Only share with recorded people's permission.
+Exports label the saved signal Processed, or Edited when an edit is active.
+The included demo is labeled Kalman because its generator runs that filter.
 
 ## Headless exports
 

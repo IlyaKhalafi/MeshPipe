@@ -1,8 +1,9 @@
 "use strict";
-const ui = Object.fromEntries(["left", "right", "avatar", "signal", "reset", "play", "timeline", "speed", "time", "status", "provenance", "comparison", "left-label"].map(id => [id, document.getElementById(id)]));
+const ui = Object.fromEntries(["left", "right", "avatar", "signal", "reset", "play", "timeline", "speed", "time", "status", "provenance", "comparison", "left-label", "right-label"].map(id => [id, document.getElementById(id)]));
 let data = null, position = 0, playing = true, previous = null;
 const camera = { yaw: 0, pitch: 0, zoom: 1 };
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const processedLabel = () => `${(data?.signal_label || "Processed").toUpperCase()} SIGNAL`;
 
 function validate(payload) {
   if (payload.version !== 1 || payload.scale !== 10000 || !Array.isArray(payload.frames) || !payload.frames.length || payload.frames.length > 900) throw new Error("Unsupported motion payload");
@@ -83,7 +84,7 @@ for (const canvas of [ui.left, ui.right]) {
 ui.reset.addEventListener("click", () => Object.assign(camera, { yaw: 0, pitch: 0, zoom: 1 }));
 ui.play.addEventListener("click", () => { playing = !playing; ui.play.textContent = playing ? "Pause" : "Play"; ui.play.setAttribute("aria-label", playing ? "Pause playback" : "Play playback"); });
 ui.timeline.addEventListener("input", () => { position = Number(ui.timeline.value); });
-ui.signal.addEventListener("change", () => { ui.comparison.hidden = ui.signal.value !== "compare"; ui["left-label"].textContent = ui.signal.value === "smooth" ? "KALMAN SIGNAL" : "RAW SIGNAL"; });
+ui.signal.addEventListener("change", () => { ui.comparison.hidden = ui.signal.value !== "compare"; ui["left-label"].textContent = ui.signal.value === "smooth" ? processedLabel() : "RAW SIGNAL"; });
 
 function tick(clock) {
   if (data) {
@@ -105,6 +106,9 @@ async function start() {
     const text = await response.text();
     if (text.length > 16 * 1024 * 1024) throw new Error("Motion file too large");
     data = validate(JSON.parse(text));
+    if (!["Edited", "Processed", "Kalman"].includes(data.signal_label || "Processed")) throw new Error("Invalid signal label");
+    ui.signal.options[0].textContent = data.signal_label || "Processed";
+    ui["left-label"].textContent = processedLabel(); ui["right-label"].textContent = processedLabel();
     ui.timeline.max = Math.max(1, data.duration); ui.timeline.disabled = false; ui.play.disabled = false;
     ui.provenance.textContent = data.source_kind === "tracked" ? "RECORDED FACE TRACKING / SOURCE IMAGES OMITTED" : data.source_kind === "synthetic" ? "SYNTHETIC DEMO / NOT CAMERA INFERENCE" : "RECORDED MOTION / SOURCE PROVENANCE UNKNOWN";
     ui.status.textContent = `${data.frames.length} saved frames / shared orbit / all playback stays in your browser`;

@@ -25,3 +25,11 @@ def test_budget_hysteresis_and_bounds():
 def test_invalid_budget(budget):
     with pytest.raises(ValueError):
         AdaptiveBudget(640, 30, budget)
+
+
+def test_adaptive_respects_low_user_rate_cap():
+    control = AdaptiveBudget(640, 1)
+    control.configure(True, 33)
+    for _ in range(60):
+        control.observe(100)
+    assert control.fps == 1
