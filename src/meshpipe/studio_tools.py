@@ -76,6 +76,9 @@ class StudioTools:
         build_create(self)
         build_inspect(self)
         build_play(self)
+        from meshpipe.advanced_tools import AdvancedTools
+
+        self.advanced = AdvancedTools(self)
         self.panel.add_child(gui.Label("Tools stay local and opt-in."))
         self.studio.view.set_on_mouse(self._pick)
         self.studio.view.set_on_key(self._key)
@@ -113,8 +116,9 @@ class StudioTools:
             raise ValueError("Previous performance is still saving")
         if self.session is None:
             source_kind = (
-                "replay"
+                self.studio.playback.reader.source_kind
                 if self.studio.playback
+                and self.studio.playback.reader.source_kind in {"tracked", "synthetic"}
                 else ("synthetic" if self.studio.config.demo else "tracked")
             )
             self.session = SessionRecorder(
@@ -200,6 +204,7 @@ class StudioTools:
         self.recovery = Recovery()
         self.studio.frame = initial
         self.notice.text = f"Replay loaded. {len(reader.timestamps)} frames."
+        self.advanced.sync()
 
     def _seek(self, value: float) -> None:
         if self.studio.playback:
