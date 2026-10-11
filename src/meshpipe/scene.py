@@ -221,7 +221,9 @@ class FaceScene:
 
         if self.cartoon is None:
             self.cartoon = CartoonRig(builtin_template())
-        image = self.cartoon.render(frame.expressions, head_angles(frame.vertices)[2], self.opacity)
+        image = self.cartoon.render(
+            frame.expressions, head_angles(frame.vertices)[2], self.opacity, rgba=True
+        )
         aspect = image.shape[1] / image.shape[0]
         mesh = o3d.geometry.TriangleMesh(
             o3d.utility.Vector3dVector(
@@ -237,7 +239,12 @@ class FaceScene:
         mesh.triangle_uvs = o3d.utility.Vector2dVector(
             [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]]
         )
-        record = material([1, 1, 1], "defaultUnlit")
+        mesh.compute_vertex_normals()
+        record = material([1, 1, 1], "defaultLitTransparency")
+        record.has_alpha = True
+        record.base_reflectance = 0.0
+        record.base_metallic = 0.0
+        record.transmission = 0.0
         record.albedo_img = o3d.geometry.Image(np.ascontiguousarray(image))
         self._replace("face", mesh, record)
 

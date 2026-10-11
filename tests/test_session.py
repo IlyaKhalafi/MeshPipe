@@ -94,3 +94,37 @@ def test_writer_failure_surfaces(tmp_path):
     with pytest.raises(RuntimeError, match="uint8"):
         recorder.close()
     assert not recorder.path.exists()
+
+
+def test_reader_open_failure_becomes_actionable_error(tmp_path, monkeypatch):
+    path = tmp_path / "inaccessible.meshpipe"
+    path.write_bytes(b"placeholder")
+
+    def unavailable(*arguments, **keywords):
+        raise sqlite3.OperationalError("permission denied")
+
+    monkeypatch.setattr(sqlite3, "connect", unavailable)
+    with pytest.raises(ValueError, match="Cannot open"):
+        SessionReader(path)
+
+
+@pytest.mark.parametrize(
+    "column,payload",
+    [
+        ("expressions", None),
+        ("raw", "bad"),
+        ("expressions", "x" * 40_000),
+        ("rgb", b"not compressed"),
+    ],
+)
+def test_corrupt_frame_payloads_rejected(tmp_path, column, payload):
+    path = tmp_path / "corrupt.meshpipe"
+    record(path, [make_frame()])
+    with sqlite3.connect(path) as connection:
+        connection.execute(f"UPDATE frames SET {column}=?", (payload,))
+    reader = SessionReader(path)
+    try:
+        with pytest.raises(ValueError):
+            reader.frame(0)
+    finally:
+        reader.close()

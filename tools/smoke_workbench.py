@@ -21,6 +21,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source")
     parser.add_argument("--model", type=Path)
+    parser.add_argument("--replay", type=Path)
     parser.add_argument("--output", type=Path, default=Path("/tmp/meshpipe-workbench.png"))
     options = parser.parse_args()
     application = gui.Application.instance
@@ -30,10 +31,11 @@ def main() -> None:
         studio_tools.export_path = lambda prefix, suffix: root / (prefix + suffix)
         studio = Studio(
             Config(
-                demo=options.source is None,
+                demo=options.source is None and options.replay is None,
                 source=options.source or "0",
                 model=options.model,
                 loop=True,
+                replay=options.replay,
             )
         )
         tools = studio.tools

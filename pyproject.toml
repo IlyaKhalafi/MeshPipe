@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meshpipe"
-version = "0.1.0"
+version = "0.2.0"
 description = "A CPU-first facial mesh studio with Kalman smoothing and expression-driven avatars"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"

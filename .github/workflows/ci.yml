@@ -26,8 +26,9 @@ jobs:
           cache: pip
       - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
-      - run: python -m ruff check src tests tools
-      - run: python -m ruff format --check src tests tools
+      - run: python -m ruff check src tests tools integrations
+      - run: python -m ruff format --check src tests tools integrations
+      - run: python tools/build_blender_addon.py
       - run: meshpipe benchmark --demo --frames 30 --warmup 5
 
   build:

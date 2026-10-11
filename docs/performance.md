@@ -1,6 +1,6 @@
 # Performance
 
-## Local validation
+## Initial studio baseline
 
 Measured on October 10, 2026 with an Intel Core i7-9750H, Linux x86_64 and Python
 3.11.15. MediaPipe 0.10.21 uses the explicitly selected CPU delegate.
@@ -23,6 +23,35 @@ Raw benchmark results are saved in `docs/benchmarks/cpu-video.json`.
 This is one local run, not a cross-machine performance guarantee. Results will
 vary with power limits, camera drivers, codecs, lighting and input dimensions.
 No claim is made about webcam FPS or rendering speed.
+
+## Workbench release validation
+
+Version 0.2.0 was measured on October 11, 2026 on the same Intel Core i7-9750H,
+Linux and Python environment, using the same genuine interview input and
+640 by 360 processing dimensions. CPU inference and Kalman smoothing remained
+enabled. GUI tools and rendering are outside this headless measurement.
+
+| Measurement | Result |
+| --- | --- |
+| Warmup frames excluded | 30 |
+| Measured frames | 300 |
+| Frames with detected face | 300 |
+| Headless throughput | 45.44 FPS |
+| Mean CPU processing time | 20.283 ms |
+| 95th percentile CPU processing time | 50.719 ms |
+| Mean decoding and processing time | 22.005 ms |
+
+Raw results are in `docs/benchmarks/workbench-cpu-video.json`. These are single
+runs, not a controlled comparison or evidence of a measured optimization.
+Scheduling, thermals and background workloads can affect both throughput and
+tail latency. The README reports the newer release measurement.
+
+Native Linux validation exercised all seven views, orbit, pause, exports,
+genuine-video recording and replay, GIF and MP4 encoding, calibration, cartoon
+anchors, local OSC, smoothing comparisons, landmark history and expression
+targets. A separate smoke run started directly from an inference-free session.
+Physical webcam operation and native Blender rig behavior remain field-test
+requirements. Unit tests and mock Blender API tests do not cover those devices.
 
 ## Benchmark scope
 

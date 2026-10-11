@@ -146,7 +146,10 @@ class SessionReader:
         path = Path(path).resolve()
         if not path.is_file():
             raise ValueError("Session file does not exist")
-        self.connection = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
+        try:
+            self.connection = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True)
+        except sqlite3.Error as error:
+            raise ValueError("Cannot open MeshPipe session database") from error
         try:
             self.connection.execute("PRAGMA query_only=ON")
             if self.connection.execute("PRAGMA user_version").fetchone()[0] != VERSION:

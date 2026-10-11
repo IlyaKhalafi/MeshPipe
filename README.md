@@ -155,7 +155,7 @@ meshpipe 0 --width 320 --max-fps 20
 meshpipe benchmark video.mp4 --frames 300 --warmup 10 --output benchmark.json
 ```
 
-A local run processed genuine recorded interview footage at **48.07 FPS**
+Version 0.2.0 processed genuine recorded interview footage at **45.44 FPS**
 on an Intel Core i7-9750H with CPU inference and Kalman smoothing. All 300 measured
 frames contained a detected face at 640 by 360. Headless throughput is not webcam
 or desktop FPS. It excludes rendering, display pacing and model startup.

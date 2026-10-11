@@ -100,7 +100,14 @@ class CartoonRig:
             weight = np.exp(-0.5 * ((offset_x / spread_x) ** 2 + (offset_y / spread_y) ** 2))
             self.fields[name] = (offset_x, offset_y, weight)
 
-    def render(self, scores: dict[str, float], roll: float = 0, opacity: float = 1) -> np.ndarray:
+    def render(
+        self,
+        scores: dict[str, float],
+        roll: float = 0,
+        opacity: float = 1,
+        *,
+        rgba: bool = False,
+    ) -> np.ndarray:
         height, width = self.horizontal.shape
         map_x, map_y = self.horizontal.copy(), self.vertical.copy()
         for name, channel in [("left_eye", "eyeBlinkLeft"), ("right_eye", "eyeBlinkRight")]:
@@ -123,4 +130,6 @@ class CartoonRig:
         )
         warped = cv2.warpAffine(warped, transform, (width, height), flags=cv2.INTER_LINEAR)
         alpha = warped[:, :, 3:4].astype(np.float32) / 255 * np.clip(opacity, 0, 1)
+        if rgba:
+            return np.concatenate([warped[:, :, :3], (alpha * 255).astype(np.uint8)], axis=2)
         return (warped[:, :, :3] * alpha + np.array([9, 17, 22]) * (1 - alpha)).astype(np.uint8)

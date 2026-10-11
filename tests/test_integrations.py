@@ -10,7 +10,9 @@ import pytest
 from test_session import make_frame
 
 from meshpipe import osc_protocol
-from meshpipe.cartoon import CartoonTemplate, builtin_template
+from meshpipe.cartoon import CartoonRig, CartoonTemplate, builtin_template
+from meshpipe.cli import main, parser
+from meshpipe.config import Config
 from meshpipe.osc_protocol import decode_bundle, osc_message
 from meshpipe.playground import GestureController
 from meshpipe.session import SessionReader, SessionRecorder
@@ -74,6 +76,28 @@ def test_turn_gestures_require_release():
     assert controller.update({}, True, 1, -0.4) == []
     controller.update({}, True, 2, 0)
     assert controller.update({}, True, 3, 0.4)[0].name == "Turn right"
+
+
+def test_cartoon_transparency_and_fade():
+    rig = CartoonRig(builtin_template())
+    image = rig.render({}, rgba=True)
+    assert image.shape == (384, 384, 4)
+    assert image[:, :, 3].min() == 0 and image[:, :, 3].max() == 255
+    assert rig.render({}, opacity=0, rgba=True)[:, :, 3].max() == 0
+
+
+def test_workbench_cli_and_invalid_config(capsys, tmp_path):
+    options = parser().parse_args(["run", "--replay", "take.meshpipe", "--osc-port", "9000"])
+    assert options.replay == Path("take.meshpipe") and options.osc_port == 9000
+    for arguments in [
+        {"osc_port": 1000},
+        {"osc_port": 65536},
+        {"replay": Path("take"), "demo": True},
+    ]:
+        with pytest.raises(ValueError):
+            Config(**arguments)
+    assert main(["run", "--replay", str(tmp_path / "missing.meshpipe"), "--demo"]) == 1
+    assert "Replay and synthetic demo cannot be used together" in capsys.readouterr().err
 
 
 def test_session_close_idempotent_and_non_database_rejected(tmp_path):

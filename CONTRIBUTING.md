@@ -39,6 +39,7 @@ python tools/smoke_studio.py
 python tools/smoke_studio.py --video --source sample.mp4 --model face_landmarker.task
 python tools/smoke_workbench.py
 python tools/smoke_workbench.py --source sample.mp4 --model face_landmarker.task
+python tools/smoke_workbench.py --replay exports/performance.meshpipe
 ```
 
 The smoke tool exercises every view, orbit, pause and export. It saves a
