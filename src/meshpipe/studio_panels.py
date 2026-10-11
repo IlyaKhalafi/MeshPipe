@@ -122,6 +122,16 @@ def build_inspect(tools) -> None:
     tools.quality = gui.Label("Waiting for input quality checks")
     tools.quality_values = gui.Label("Framing and lighting, not confidence scores")
     panel.add_child(section("01  TRACKING HEALTH", tools.quality, tools.quality_values))
+    adaptive = gui.Checkbox("Adaptive CPU budget")
+    adaptive.checked = tools.studio.config.adaptive_cpu
+    budget = slider(8, 200, tools.studio.config.budget_ms, lambda _: update_budget())
+
+    def update_budget():
+        if tools.studio.worker:
+            tools.studio.worker.set_budget(adaptive.checked, budget.double_value)
+
+    adaptive.set_on_checked(lambda _: update_budget())
+    panel.add_child(section("CPU BUDGET", adaptive, gui.Label("Processing budget in ms"), budget))
     inspect = gui.Checkbox("Enable landmark explorer")
     tools.inspect_checkbox = inspect
     inspect.set_on_checked(tools._inspect)

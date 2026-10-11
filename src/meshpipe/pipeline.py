@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from numpy.typing import NDArray
 
+from meshpipe.adaptive import AdaptiveBudget
 from meshpipe.capture import VideoSource
 from meshpipe.config import Config
 from meshpipe.demo import demo_frame
@@ -101,6 +102,9 @@ class Worker:
         self.finished = False
         self.paused = False
         self.smoothing = config.smoothing
+        self.adaptive = AdaptiveBudget(config.width, config.max_fps, config.budget_ms)
+        self.adaptive.configure(config.adaptive_cpu, config.budget_ms)
+        self.adaptive_settings = (config.adaptive_cpu, config.budget_ms)
         self.thread = threading.Thread(target=self._run, name="meshpipe-inference", daemon=True)
 
     def start(self) -> None:
@@ -113,6 +117,12 @@ class Worker:
     def set_smoothing(self, enabled: bool) -> None:
         with self.lock:
             self.smoothing = enabled
+
+    def set_budget(self, enabled: bool, milliseconds: float) -> None:
+        if not 8 <= milliseconds <= 200:
+            raise ValueError("CPU budget must be between 8 and 200 ms")
+        with self.lock:
+            self.adaptive_settings = (enabled, milliseconds)
 
     def take(self) -> tuple[Frame | None, str | None, bool]:
         with self.lock:
@@ -131,6 +141,9 @@ class Worker:
             while not self.stop.is_set():
                 with self.lock:
                     paused, smoothing = self.paused, self.smoothing
+                    settings = self.adaptive_settings
+                if settings != (self.adaptive.enabled, self.adaptive.budget_ms):
+                    self.adaptive.configure(*settings)
                 if paused:
                     self.stop.wait(0.05)
                     previous = time.perf_counter()
@@ -143,10 +156,12 @@ class Worker:
                         rgb, int(seconds * 1000), smoothing, landmarks, expressions
                     )
                 else:
+                    source.width = self.adaptive.width
                     captured = source.read()
                     if captured is None:
                         break
                     frame = processor.process(*captured, smoothing=smoothing)
+                self.adaptive.observe(frame.processing_ms)
                 interval = started - previous
                 previous = started
                 instant_fps = 1 / max(interval, 1e-6) if count else 0
@@ -156,6 +171,8 @@ class Worker:
                     self.latest = frame
                 count += 1
                 rate = self.config.max_fps
+                if source is not None and source.camera:
+                    rate = self.adaptive.fps
                 if source is not None and not source.camera:
                     rate = min(rate, source.fps)
                 self.stop.wait(max(0, 1 / rate - (time.perf_counter() - started)))

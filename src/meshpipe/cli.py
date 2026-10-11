@@ -36,6 +36,8 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("--no-smoothing", action="store_true")
         command.add_argument("--loop", action="store_true", help="Loop video input")
         if name == "run":
+            command.add_argument("--adaptive-cpu", action="store_true")
+            command.add_argument("--budget-ms", type=float, default=33)
             command.add_argument(
                 "--landmark-only", action="store_true", help="Record motion without source images"
             )
@@ -146,6 +148,8 @@ def main(arguments: list[str] | None = None) -> int:
             cartoon=getattr(options, "cartoon", None),
             osc_port=getattr(options, "osc_port", None),
             landmark_only=getattr(options, "landmark_only", False),
+            adaptive_cpu=getattr(options, "adaptive_cpu", False),
+            budget_ms=getattr(options, "budget_ms", 33),
         )
         if options.command == "benchmark":
             result = json.dumps(benchmark(config, options.frames, options.warmup), indent=2)

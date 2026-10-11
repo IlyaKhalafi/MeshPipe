@@ -16,8 +16,14 @@ class Config:
     cartoon: Path | None = None
     osc_port: int | None = None
     landmark_only: bool = False
+    adaptive_cpu: bool = False
+    budget_ms: float = 33.0
 
     def __post_init__(self) -> None:
+        import math
+
+        if not math.isfinite(self.budget_ms) or not 8 <= self.budget_ms <= 200:
+            raise ValueError("CPU budget must be between 8 and 200 ms")
         if self.width < 160:
             raise ValueError("Processing width must be at least 160 pixels")
         if not 1 <= self.max_fps <= 120:

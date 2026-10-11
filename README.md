@@ -48,6 +48,7 @@ stay opt-in. Hide the workbench when you only need the viewer.
 
 [Workbench guide](docs/workbench.md) and [Blender receiver](docs/streaming.md)
 cover setup and limitations.
+See [motion studio](docs/advanced.md) for adaptive CPU and landmark-only controls.
 
 ```bash
 meshpipe run --replay exports/performance.meshpipe --loop
