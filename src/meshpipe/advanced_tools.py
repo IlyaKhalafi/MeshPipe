@@ -63,6 +63,19 @@ class AdvancedTools:
         )
         tools.tabs.add_tab("Motion", panel)
         self.panel = panel
+        self.heat_limit = slider(
+            0.005, 0.2, 0.08, lambda value: setattr(tools.studio.content.heatmap, "limit", value)
+        )
+        panel.add_child(
+            section(
+                "EXPRESSION DISPLACEMENT",
+                gui.Label("Cyan quiet. Amber active. Coral high."),
+                button("Capture neutral and show heatmap", safe(self.neutral)),
+                gui.Label("Color limit / eye-distance fraction"),
+                self.heat_limit,
+                gui.Label("Rigid head motion removed. Not an emotion score."),
+            )
+        )
         self.bake_fps = slider(1, 120, 30, lambda _: None)
         self.bake_tolerance = slider(0, 0.05, 0.002, lambda _: None)
         panel.add_child(
@@ -109,6 +122,13 @@ class AdvancedTools:
         if avatar is None:
             raise ValueError("Load a GLB avatar first")
         return avatar
+
+    def neutral(self):
+        studio = self.tools.studio
+        studio.content.heatmap.capture(studio.frame.vertices if studio.frame else None)
+        studio.mode.selected_index = studio.modes.index("Heatmap")
+        studio._mode_changed("Heatmap", studio.mode.selected_index)
+        self.tools.notice.text = "Neutral geometry captured. Move jaw or brows."
 
     def export_bake(self):
         from meshpipe.baking import export_animation

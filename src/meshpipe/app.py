@@ -82,6 +82,7 @@ class Studio:
             "Emoji",
             "Cartoon",
             "Custom Avatar",
+            "Heatmap",
         ]
         for item in self.modes:
             self.mode.add_item(item)
@@ -157,6 +158,10 @@ class Studio:
         self.view.look_at([0, 0, 0], [0, 0.1, distance], [0, 1, 0])
 
     def _mode_changed(self, text: str, index: int) -> None:
+        if text == "Heatmap" and self.content.heatmap.reference is None:
+            self.mode.selected_index = self.modes.index("Surface")
+            self._message("Neutral reference needed", "Capture neutral geometry in Motion first.")
+            text = "Surface"
         if (
             hasattr(self, "tools")
             and text in {"Textured", "Source Color"}

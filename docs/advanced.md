@@ -65,3 +65,13 @@ New actions preserve existing actions and restore current key values and root
 rotation. Reduced keys use linear interpolation. Existing animation can be
 restored by selecting its old action. Blender runtime needs a local installation
 and a compatible rig. The export protocol is tested without Blender.
+
+## Expression displacement heatmap
+
+Hold a comfortable neutral face and capture neutral in Motion. Heatmap colors
+show per-vertex displacement as a fraction of eye distance. Cyan marks little
+movement, amber stronger movement and coral values near the color limit.
+Stable eye and nose anchors estimate a rigid alignment against the reference,
+removing head rotation and translation before comparison. Adjust the scale for
+subtle movement. Capture neutral again after camera or identity changes.
+These geometry measurements are not emotion recognition or medical analysis.

@@ -5,6 +5,7 @@ import open3d as o3d
 from open3d.visualization import rendering
 
 from meshpipe.geometry import to_vertices, topology
+from meshpipe.heatmap import DisplacementHeatmap
 from meshpipe.pipeline import Frame
 from meshpipe.pose import head_angles, head_rotation
 
@@ -48,6 +49,7 @@ class FaceScene:
         self.selected: int | None = None
         self.cartoon = None
         self.custom_avatar = None
+        self.heatmap = DisplacementHeatmap()
         self.lit = True
         self.mesh = o3d.geometry.TriangleMesh()
         self.mesh.triangles = o3d.utility.Vector3iVector(topology().copy())
@@ -199,6 +201,8 @@ class FaceScene:
             self.mesh.vertices = o3d.utility.Vector3dVector(frame.vertices)
             self.mesh.vertex_normals = o3d.utility.Vector3dVector(frame.normals)
             colors = frame.colors if self.mode == "Source Color" else np.tile(color, (468, 1))
+            if self.mode == "Heatmap":
+                colors = self.heatmap.colors(frame.vertices)
             if self.mode == "Source Color":
                 colors = colors * self.opacity + np.array(BACKGROUND[:3]) * (1 - self.opacity)
             if self.mode == "Textured":
