@@ -1,4 +1,6 @@
 import json
+from importlib.resources import files
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -43,3 +45,10 @@ def test_edited_signal_not_mislabeled_kalman(performance):
     reader.set_edit(MotionEdit(despike=True))
     assert showcase_payload(reader, 3)["signal_label"] == "Edited"
     reader.close()
+
+
+def test_documentation_viewer_matches_packaged_sources():
+    root = Path(__file__).resolve().parents[1]
+    for name in ("index.html", "style.css", "viewer.js"):
+        resource = files("meshpipe").joinpath("assets/showcase", name)
+        assert resource.read_bytes() == (root / "docs/demo" / name).read_bytes()

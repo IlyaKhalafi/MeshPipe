@@ -1,5 +1,10 @@
 # Motion studio
 
+![Native landmark-only replay with tracked geometry and anchored glasses](media/motion-studio.png)
+
+Motion holds editing and export tools. Style holds avatar, accessory and heatmap
+controls. Both tabs keep expensive workflows opt-in and share the main viewport.
+
 ## Adaptive CPU
 
 Enable Adaptive CPU budget in Inspect or start with
@@ -66,8 +71,14 @@ then press Bake Saved Performance. Scene FPS conversion is automatic.
 New actions preserve existing actions and restore current key values and root
 rotation. Reduced keys use linear interpolation. Existing animation can be
 restored by selecting its old action. Blender runtime needs a local installation
-and a compatible rig. The export protocol is tested without Blender.
+and a compatible rig. Standalone Blender 4.2.0 validation exercises real shape
+keys, action preservation, scene FPS conversion and the packaged bake operator.
 Head baking preserves Euler, quaternion and axis-angle rotation modes.
+
+`python tools/smoke_blender_bake.py` runs those checks in an environment with
+standalone `bpy` installed. Keep it separate from the studio environment because
+Blender's NumPy requirements can differ. Physical rig behavior still depends
+on target shape keys and root orientation.
 
 ## Expression displacement heatmap
 

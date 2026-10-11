@@ -84,3 +84,15 @@ heatmaps and accessory anchors using the same genuine interview.
 ```bash
 python tools/smoke_advanced.py Interview_with_Antti_Pulkkinen.ogv --model face_landmarker.task
 ```
+
+`docs/media/motion-studio.png` captures actual native landmark-only replay with
+face-attached glasses. `docs/media/browser-studio.png` captures the included
+browser demo on desktop. Both screenshots are resized for documentation and
+use the same credited interview motion.
+
+## Blender runtime validation
+
+`tools/smoke_blender_bake.py` builds and loads the actual add-on ZIP, creates
+shape keys and head roots, and checks baked actions through standalone Blender
+4.2.0. Euler, quaternion and axis-angle cases pass along with the registered
+bake operator. The script needs a separate environment with `bpy` installed.

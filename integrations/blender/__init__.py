@@ -11,10 +11,10 @@ from .osc_protocol import decode_bundle
 bl_info = {
     "name": "MeshPipe Local Receiver",
     "author": "MeshPipe contributors",
-    "version": (0, 1, 0),
+    "version": (0, 3, 0),
     "blender": (3, 6, 0),
     "location": "View3D > Sidebar > MeshPipe",
-    "description": "Receive local facial expressions and head rotation over OSC",
+    "description": "Receive local facial motion and bake saved expression performances",
     "category": "Animation",
 }
 

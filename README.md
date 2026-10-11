@@ -21,7 +21,7 @@ not a desktop screenshot. [Showcase details](docs/showcase.md).
 
 - **Live or recorded** with webcam indices and local video files, including looping.
 - **Stable geometry** with 468 landmarks, vectorized Kalman smoothing and cached SciPy triangulation.
-- **Seven views** with surface, wireframe, points, source color, UV texture, emoji and cartoon modes.
+- **Ten views** with mesh, texture, emoji, cartoon, GLB avatar, accessory and heatmap modes.
 - **Hands-on 3D** with drag-to-orbit, scroll-to-zoom, pan, reset and automatic orbit.
 - **Expression retargeting** with a built-in emoji driven by smile, jaw and blink scores.
 - **Useful exports** with colored PLY meshes and JSON landmarks, expressions and topology.
@@ -51,6 +51,8 @@ cover setup and limitations.
 See [motion studio](docs/advanced.md) for eight new opt-in workflows.
 
 ## Motion, remixed
+
+![Browser motion studio comparing raw and Kalman geometry from a genuine interview](docs/media/browser-studio.png)
 
 | Tool | What you can do |
 | --- | --- |

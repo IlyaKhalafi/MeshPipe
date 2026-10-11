@@ -38,5 +38,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check src/meshpipe/assets/showcase/viewer.js
+      - run: node --check tools/smoke_browser.mjs
       - run: python -m pip install build
       - run: python -m build
