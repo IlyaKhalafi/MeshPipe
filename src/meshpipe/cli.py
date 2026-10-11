@@ -56,6 +56,17 @@ def parser() -> argparse.ArgumentParser:
             command.add_argument("--output", type=Path, help="Save benchmark JSON")
     download = commands.add_parser("download-model", help="Download official model to local cache")
     download.add_argument("--output", type=Path, default=default_model_path())
+    for name in ("export-web", "export-animation"):
+        command = commands.add_parser(name, help="Export a saved performance without opening UI")
+        command.add_argument("performance", type=Path)
+        command.add_argument("--output", type=Path, required=True)
+        command.add_argument("--edit", type=Path)
+        command.add_argument("--blend", type=Path)
+        if name == "export-web":
+            command.add_argument("--frames", type=int, default=360)
+        else:
+            command.add_argument("--fps", type=float, default=30)
+            command.add_argument("--tolerance", type=float, default=0.002)
     return root
 
 
@@ -125,6 +136,8 @@ def main(arguments: list[str] | None = None) -> int:
         "run",
         "benchmark",
         "download-model",
+        "export-web",
+        "export-animation",
         "--help",
         "-h",
         "--version",
@@ -132,6 +145,26 @@ def main(arguments: list[str] | None = None) -> int:
         arguments.insert(0, "run")
     options = parser().parse_args(arguments)
     try:
+        if options.command in {"export-web", "export-animation"}:
+            from meshpipe.baking import export_animation
+            from meshpipe.motion import EditedReader, MotionEdit
+            from meshpipe.session import SessionReader
+            from meshpipe.web_export import export_showcase
+
+            reader = EditedReader(SessionReader(options.performance))
+            try:
+                if options.edit:
+                    reader.set_edit(MotionEdit.load(options.edit, reader.base.duration_ms))
+                if options.blend:
+                    reader.set_blend(options.blend)
+                if options.command == "export-web":
+                    path = export_showcase(reader, options.output, options.frames)
+                else:
+                    path = export_animation(reader, options.output, options.fps, options.tolerance)
+                print(f"Saved {path}")
+            finally:
+                reader.close()
+            return 0
         if options.command == "download-model":
             print(f"Model saved to {download_model(options.output)}")
             return 0

@@ -2,6 +2,7 @@ from open3d.visualization import gui
 
 from meshpipe.accessories import AccessoryAnchor
 from meshpipe.avatar import load_glb
+from meshpipe.jobs import ExportJob, MotionSource
 from meshpipe.motion import EditedReader, MotionEdit
 from meshpipe.quality import Recovery
 from meshpipe.widgets import button, combo, row, section, slider
@@ -10,7 +11,9 @@ from meshpipe.widgets import button, combo, row, section, slider
 class AdvancedTools:
     def __init__(self, tools):
         self.tools = tools
+        self.job = None
         panel = gui.ScrollableVert(8, gui.Margins(0, 8, 0, 4))
+        panel.background_color = gui.Color(0.055, 0.095, 0.115)
         self.trim_start = slider(0, 600000, 0, lambda _: None)
         self.trim_end = slider(0, 600000, 600000, lambda _: None)
         self.strength = slider(0, 3, 1, lambda _: None)
@@ -71,13 +74,16 @@ class AdvancedTools:
                 button("Export browser studio", safe(self.export_web)),
             )
         )
+        style_panel = gui.ScrollableVert(8, gui.Margins(0, 8, 0, 4))
+        style_panel.background_color = gui.Color(0.055, 0.095, 0.115)
+        tools.tabs.add_tab("Style", style_panel)
         self.accessory_name = combo(["Glasses", "Crown", "Brows"], lambda *_: None)
         self.accessory_index = gui.NumberEdit(gui.NumberEdit.INT)
         self.accessory_index.set_limits(0, 467)
         self.accessory_index.int_value = 168
         self.accessory_scale = slider(0.1, 3, 1, lambda _: None)
         self.accessory_offsets = [slider(-3, 3, value, lambda _: None) for value in (0, 0, 0.18)]
-        panel.add_child(
+        style_panel.add_child(
             section(
                 "FACE ACCESSORIES",
                 self.accessory_name,
@@ -101,7 +107,7 @@ class AdvancedTools:
         self.heat_limit = slider(
             0.005, 0.2, 0.08, lambda value: setattr(tools.studio.content.heatmap, "limit", value)
         )
-        panel.add_child(
+        style_panel.add_child(
             section(
                 "EXPRESSION DISPLACEMENT",
                 gui.Label("Cyan quiet. Amber active. Coral high."),
@@ -128,7 +134,7 @@ class AdvancedTools:
         self.rig_channel = gui.TextEdit()
         self.rig_channel.text_value = "jawOpen"
         self.rig_strength = slider(0, 3, 1, lambda _: None)
-        panel.add_child(
+        style_panel.add_child(
             section(
                 "02  CUSTOM GLB AVATAR",
                 gui.Label("Named morph-target head. No skeleton required."),
@@ -199,18 +205,32 @@ class AdvancedTools:
         from meshpipe.studio_tools import export_path
 
         path = export_path("blender-motion", ".json")
-        export_animation(
-            self.reader(), path, self.bake_fps.double_value, self.bake_tolerance.double_value
-        )
-        self.tools.notice.text = f"Saved {path.name}"
+        fps, tolerance = self.bake_fps.double_value, self.bake_tolerance.double_value
+        self.start_export(lambda reader: export_animation(reader, path, fps, tolerance))
 
     def export_web(self):
         from meshpipe.studio_tools import export_path
         from meshpipe.web_export import export_showcase
 
         path = export_path("browser-studio", "")
-        export_showcase(self.reader(), path)
-        self.tools.notice.text = f"Saved {path.name}. Serve directory over HTTP."
+        self.start_export(lambda reader: export_showcase(reader, path))
+
+    def start_export(self, action):
+        if self.job is not None:
+            raise ValueError("Wait for the current motion export to finish")
+        self.job = ExportJob(MotionSource.snapshot(self.reader()), action)
+        self.tools.notice.text = "Exporting motion in background. Replay stays responsive."
+
+    def tick(self):
+        if self.job is not None and self.job.done.is_set():
+            job, self.job = self.job, None
+            self.tools.notice.text = job.error or f"Saved {job.result.name}"
+            return True
+        return False
+
+    def close(self):
+        if self.job:
+            self.job.close()
 
     def load_avatar(self, path):
         avatar = load_glb(path)

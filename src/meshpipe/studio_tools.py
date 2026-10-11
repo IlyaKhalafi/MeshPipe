@@ -119,7 +119,13 @@ class StudioTools:
                 self.studio.playback.reader.source_kind
                 if self.studio.playback
                 and self.studio.playback.reader.source_kind in {"tracked", "synthetic"}
-                else ("synthetic" if self.studio.config.demo else "tracked")
+                else (
+                    "replay"
+                    if self.studio.playback
+                    else "synthetic"
+                    if self.studio.config.demo
+                    else "tracked"
+                )
             )
             self.session = SessionRecorder(
                 export_path("performance", ".meshpipe"),
@@ -496,7 +502,7 @@ class StudioTools:
                 self.studio.content.clear()
 
     def tick(self, clock: float) -> bool:
-        redraw = False
+        redraw = self.advanced.tick()
         if self.calibrating and clock >= self.calibrating[1]:
             neutral = self.calibrating[0]
             self.calibrating = None
@@ -625,6 +631,7 @@ class StudioTools:
         if self.closed:
             return []
         self.closed = True
+        self.advanced.close()
         self.capture_token += 1
         errors = []
         for resource in [self.stream, self.session, self.finalizing_session, self.capture]:

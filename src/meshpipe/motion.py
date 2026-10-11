@@ -19,6 +19,8 @@ class MotionEdit:
     curves: dict[str, list[list[float]]] = field(default_factory=dict)
 
     def validate(self, duration: float) -> None:
+        if not isinstance(self.curves, dict) or not isinstance(self.despike, bool):
+            raise ValueError("Invalid motion curves or spike removal flag")
         end = duration if self.end_ms is None else self.end_ms
         values = [self.start_ms, end, self.strength, self.fade_ms, self.blend_weight]
         if not np.isfinite(values).all():

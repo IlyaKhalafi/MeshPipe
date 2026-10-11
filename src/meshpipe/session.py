@@ -160,6 +160,7 @@ class SessionRecorder:
 class SessionReader:
     def __init__(self, path: Path):
         path = Path(path).resolve()
+        self.path = path
         if not path.is_file():
             raise ValueError("Session file does not exist")
         try:

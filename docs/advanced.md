@@ -90,6 +90,8 @@ invisible camera-image occluder. Accessories are original procedural geometry.
 ## Browser showcase
 
 Open a recording, optionally apply motion edits, then export browser studio.
+Browser and Blender exports run on a background worker with a snapshot of the
+current edit and independent read-only connections. Replay stays responsive.
 The output folder contains HTML, CSS, JavaScript and quantized facial motion.
 No source images, external libraries or network services are required for
 playback. Serve the folder with `python -m http.server 8000` and open localhost
@@ -101,3 +103,16 @@ side-by-side views use one timeline. Motion is downsampled to at most 360 frames
 by default, not rerun through MediaPipe in the browser. Source provenance labels
 distinguish genuine tracking from synthetic demos. Facial motion remains
 sensitive even without images. Only share with recorded people's permission.
+
+## Headless exports
+
+Both exports also work without a display or inference model.
+
+```bash
+meshpipe export-web exports/performance.meshpipe --edit edit.json --output exports/web
+meshpipe export-animation exports/performance.meshpipe --edit edit.json --fps 30 --output exports/motion.json
+```
+
+Use `--blend other.meshpipe` when the edit has a blend weight. Browser export
+accepts `--frames` from 2 to 900. Animation export accepts `--tolerance` for
+linear key reduction. Omitting an edit exports the unchanged performance.
