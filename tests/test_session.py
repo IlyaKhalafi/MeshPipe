@@ -116,6 +116,7 @@ def test_reader_open_failure_becomes_actionable_error(tmp_path, monkeypatch):
         ("expressions", "x" * 40_000),
         ("rgb", b"not compressed"),
     ],
+    ids=["missing-expressions", "invalid-raw", "oversized-expressions", "corrupt-rgb"],
 )
 def test_corrupt_frame_payloads_rejected(tmp_path, column, payload):
     path = tmp_path / "corrupt.meshpipe"
