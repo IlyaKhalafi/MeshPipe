@@ -191,12 +191,37 @@ class MESHPIPE_PT_panel(bpy.types.Panel):
         column.prop(scene, "meshpipe_port")
         layout.label(text="127.0.0.1 only. No video transmitted.")
         layout.operator("meshpipe.stop" if scene.meshpipe_running else "meshpipe.receive")
+        layout.separator()
+        layout.label(text="Offline performance baking")
+        for name in (
+            "meshpipe_bake_file",
+            "meshpipe_bake_mapping",
+            "meshpipe_bake_strength",
+            "meshpipe_bake_start",
+        ):
+            layout.prop(scene, name)
+        layout.operator("meshpipe.bake")
 
 
 CLASSES = (MESHPIPE_OT_receive, MESHPIPE_OT_stop, MESHPIPE_PT_panel)
 
 
 def register():
+    from .bake import MESHPIPE_OT_bake
+
+    bpy.utils.register_class(MESHPIPE_OT_bake)
+    bpy.types.Scene.meshpipe_bake_file = bpy.props.StringProperty(
+        name="Animation JSON", subtype="FILE_PATH"
+    )
+    bpy.types.Scene.meshpipe_bake_mapping = bpy.props.StringProperty(
+        name="Remap JSON", default="{}"
+    )
+    bpy.types.Scene.meshpipe_bake_strength = bpy.props.FloatProperty(
+        name="Strength", default=1, min=0, max=3
+    )
+    bpy.types.Scene.meshpipe_bake_start = bpy.props.IntProperty(
+        name="Start frame", default=1, min=1
+    )
     for plugin in CLASSES:
         bpy.utils.register_class(plugin)
     bpy.types.Scene.meshpipe_target = bpy.props.PointerProperty(
@@ -212,6 +237,16 @@ def register():
 
 
 def unregister():
+    from .bake import MESHPIPE_OT_bake
+
+    bpy.utils.unregister_class(MESHPIPE_OT_bake)
+    for name in (
+        "meshpipe_bake_file",
+        "meshpipe_bake_mapping",
+        "meshpipe_bake_strength",
+        "meshpipe_bake_start",
+    ):
+        delattr(bpy.types.Scene, name)
     for receiver in list(ACTIVE_RECEIVERS):
         receiver.cancel(bpy.context)
     for scene in bpy.data.scenes:

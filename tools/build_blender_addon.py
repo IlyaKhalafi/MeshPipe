@@ -12,6 +12,10 @@ def build(output: Path) -> Path:
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.write(ROOT / "integrations/blender/__init__.py", "meshpipe_receiver/__init__.py")
         archive.write(ROOT / "src/meshpipe/osc_protocol.py", "meshpipe_receiver/osc_protocol.py")
+        archive.write(
+            ROOT / "src/meshpipe/animation_protocol.py", "meshpipe_receiver/animation_protocol.py"
+        )
+        archive.write(ROOT / "integrations/blender/bake.py", "meshpipe_receiver/bake.py")
     return output
 
 

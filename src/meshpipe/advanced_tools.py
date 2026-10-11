@@ -63,6 +63,19 @@ class AdvancedTools:
         )
         tools.tabs.add_tab("Motion", panel)
         self.panel = panel
+        self.bake_fps = slider(1, 120, 30, lambda _: None)
+        self.bake_tolerance = slider(0, 0.05, 0.002, lambda _: None)
+        panel.add_child(
+            section(
+                "OFFLINE BLENDER BAKE",
+                gui.Label("Expression and head motion JSON"),
+                gui.Label("Animation FPS"),
+                self.bake_fps,
+                gui.Label("Linear key reduction error"),
+                self.bake_tolerance,
+                button("Export Blender motion", safe(self.export_bake)),
+            )
+        )
         self.target = gui.Combobox()
         self.rig_channel = gui.TextEdit()
         self.rig_channel.text_value = "jawOpen"
@@ -96,6 +109,16 @@ class AdvancedTools:
         if avatar is None:
             raise ValueError("Load a GLB avatar first")
         return avatar
+
+    def export_bake(self):
+        from meshpipe.baking import export_animation
+        from meshpipe.studio_tools import export_path
+
+        path = export_path("blender-motion", ".json")
+        export_animation(
+            self.reader(), path, self.bake_fps.double_value, self.bake_tolerance.double_value
+        )
+        self.tools.notice.text = f"Saved {path.name}"
 
     def load_avatar(self, path):
         avatar = load_glb(path)

@@ -49,3 +49,19 @@ Limits include a 32 MiB file, 100000 total vertices, 64 morphs per primitive and
 compression and required extensions fail with an explicit message. Export a
 morph-only head rather than a complete skinned humanoid. This is expression
 retargeting, not automatic rig discovery or full-body animation.
+
+## Offline Blender bake
+
+Export Blender motion from Motion after applying edits. Choose export FPS and
+maximum linear key reduction error. The JSON contains expressions and unwrapped
+head angles, not source images. Build the updated add-on ZIP with
+`python tools/build_blender_addon.py` and install it in Blender.
+
+Choose the expression mesh and optional head root. Set Animation JSON to the
+exported file. Remap JSON accepts a channel-to-shape-key object, for example
+`{"jawOpen": "MouthOpen"}`. Set strength and start frame, stop the live receiver,
+then press Bake Saved Performance. Scene FPS conversion is automatic.
+New actions preserve existing actions and restore current key values and root
+rotation. Reduced keys use linear interpolation. Existing animation can be
+restored by selecting its old action. Blender runtime needs a local installation
+and a compatible rig. The export protocol is tested without Blender.

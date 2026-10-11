@@ -165,6 +165,8 @@ def test_blender_archive_contains_compilable_shared_codec(tmp_path):
         assert set(archive.namelist()) == {
             "meshpipe_receiver/__init__.py",
             "meshpipe_receiver/osc_protocol.py",
+            "meshpipe_receiver/animation_protocol.py",
+            "meshpipe_receiver/bake.py",
         }
         for name in archive.namelist():
             compile(archive.read(name), name, "exec")
