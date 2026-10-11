@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Explore recorded facial motion in an interactive MeshPipe browser studio.">
+  <title>MeshPipe / Motion Studio</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="viewer.js" defer></script>
+</head>
+<body>
+  <header><a class="wordmark" href="https://github.com/IlyaKhalafi/MeshPipe">MeshPipe<span> / motion studio</span></a><span class="local">NO CAMERA. NO UPLOADS.</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">A FACE. A SIGNAL. A NEW DIMENSION.</p><h1>Motion.<br><em>Made visible.</em></h1><p class="lede">Turn a moment into a mesh. Orbit recorded facial motion, switch characters, and see what smoothing changes.</p><p id="provenance" class="provenance">Loading recorded motion...</p></section>
+    <section class="studio" aria-label="Interactive motion viewer">
+      <div class="toolbar"><label>Character<select id="avatar"><option value="mesh">Face mesh</option><option value="emoji">Golden emoji</option><option value="robot">Paper robot</option></select></label><label>Signal<select id="signal"><option value="smooth">Kalman</option><option value="raw">Raw</option><option value="compare">Side by side</option></select></label><button id="reset">Reset view</button></div>
+      <div class="views" id="views"><figure><figcaption id="left-label">KALMAN SIGNAL</figcaption><canvas id="left" tabindex="0" aria-label="3D face viewer. Drag or arrow keys to orbit. Scroll or plus and minus keys to zoom."></canvas></figure><figure id="comparison" hidden><figcaption>KALMAN SIGNAL</figcaption><canvas id="right" tabindex="0" aria-label="Smoothed comparison viewer"></canvas></figure><span class="view-hint">DRAG TO ORBIT / SCROLL TO ZOOM</span></div>
+      <div class="transport"><button id="play" disabled aria-label="Pause playback">Pause</button><label class="timeline-label"><span class="sr-only">Playback position</span><input type="range" id="timeline" min="0" max="1" value="0" step="1" disabled></label><output id="time">0.00 s</output><label><span class="sr-only">Playback speed</span><select id="speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option></select></label></div>
+      <p id="status" role="status">Preparing local performance...</p>
+    </section>
+    <section class="notes"><article><span>01 / LOCAL MOTION</span><h2>Geometry, not video.</h2><p>This page replays saved coordinates. No camera permission, inference, source photos, or tracking service.</p></article><article><span>02 / HONEST SIGNALS</span><h2>Raw meets steady.</h2><p>Side-by-side playback shares one camera and timeline. Head motion remains real; Kalman smoothing reduces landmark noise.</p></article><article><span>03 / YOUR STUDIO</span><h2>Take it further.</h2><p>The desktop app adds GLB avatars, editable motion, accessories, heatmaps and offline Blender baking.</p></article></section>
+  </main>
+  <footer><span>MeshPipe / CPU-first facial motion</span><a href="https://github.com/IlyaKhalafi/MeshPipe">Explore the project</a></footer>
+</body>
+</html>

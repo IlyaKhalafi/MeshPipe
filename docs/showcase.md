@@ -58,3 +58,19 @@ The screenshot is not a mockup or a synthetic face input.
 ```bash
 python tools/smoke_workbench.py --source Interview_with_Antti_Pulkkinen.ogv --model face_landmarker.task --output docs/media/workbench.png
 ```
+
+## Browser studio
+
+`docs/demo` includes 150 frames of actual MediaPipe tracking from the same
+NASA interview, processed at width 384 with Kalman smoothing. The browser
+replays quantized raw and filtered vertices and expressions without inference
+or source images. The data is prerecorded motion, not a live browser detector.
+UI sources live in `src/meshpipe/assets/showcase` and the exporter copies them.
+
+```bash
+python tools/build_web_showcase.py Interview_with_Antti_Pulkkinen.ogv --model face_landmarker.task --frames 150 --output docs/demo
+python -m http.server 8000 --directory docs/demo
+```
+
+Open localhost on port 8000. The Chrome smoke tool checks playback, character
+switching and shared raw versus Kalman views on desktop and mobile layouts.

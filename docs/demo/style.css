@@ -1,0 +1,45 @@
+:root { --ink: #12363b; --paper: #f3f0e5; --mint: #89d9bd; --amber: #f2ba5d; --line: #ccd3c7; }
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: radial-gradient(ellipse at 0 10%, #dcebdc, transparent 45%), repeating-linear-gradient(0deg, transparent, transparent 31px, #12363b04 32px), var(--paper); font-family: Georgia, 'Times New Roman', serif; }
+header, footer { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 28px 5vw; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.wordmark { font-size: 26px; font-weight: bold; text-decoration: none; }
+.wordmark span, .local, .eyebrow, .provenance, figcaption, .view-hint, .notes article > span, footer, #status { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; }
+.wordmark span { font-weight: normal; }
+main { max-width: 1500px; margin: auto; padding: 40px 5vw 0; }
+.intro { display: grid; grid-template-columns: 1.1fr 1fr; gap: 0 50px; align-items: end; margin-bottom: 42px; }
+.eyebrow { grid-column: 1 / -1; }
+h1 { font-size: clamp(60px, 7.8vw, 116px); letter-spacing: -.06em; line-height: .94; margin: 20px 0 0; font-weight: normal; }
+h1 em { color: #287d69; }
+.lede { font-size: clamp(19px, 2vw, 28px); line-height: 1.4; max-width: 430px; margin-bottom: 20px; }
+.provenance { grid-column: 2; color: #426760; line-height: 1.6; margin: 0; }
+.studio { background: #0d252e; border-radius: 6px; color: #deeee9; overflow: hidden; box-shadow: 0 28px 60px #0b353826; animation: reveal .7s ease-out both; }
+.toolbar, .transport { display: flex; align-items: center; gap: 18px; padding: 18px 24px; font-family: 'Courier New', monospace; font-size: 12px; background: #16343e; flex-wrap: wrap; }
+label { display: flex; align-items: center; gap: 10px; }
+button, select { color: #e3f3eb; background: #214651; border: 1px solid #48616a; border-radius: 3px; padding: 9px 12px; font: inherit; cursor: pointer; }
+button:hover, select:hover { border-color: var(--mint); }
+button:disabled { opacity: .45; cursor: wait; }
+button:focus-visible, select:focus-visible, input:focus-visible, canvas:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+#reset { margin-left: auto; }
+.views { position: relative; display: flex; background: radial-gradient(ellipse at 50% 45%, #194450, #0d252e 70%); min-height: 410px; }
+figure { margin: 0; width: 100%; min-width: 0; position: relative; }
+figure[hidden] { display: none; }
+figcaption { position: absolute; top: 24px; left: 24px; color: var(--mint); pointer-events: none; }
+canvas { display: block; width: 100%; height: 440px; cursor: grab; touch-action: none; }
+canvas:active { cursor: grabbing; }
+.view-hint { position: absolute; bottom: 15px; left: 24px; color: #9bbbbc; pointer-events: none; font-size: 10px; }
+.timeline-label { flex: 1; min-width: 100px; }
+input[type=range] { width: 100%; accent-color: var(--amber); cursor: pointer; }
+output { min-width: 70px; }
+#play { background: var(--amber); color: #183538; min-width: 75px; border: 0; }
+#status { padding: 0 24px 16px; margin: 0; background: #16343e; color: #b6d2cf; }
+.notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 35px; margin: 60px 0; }
+.notes article { padding-top: 18px; border-top: 1px solid var(--line); }
+.notes article > span { color: #527066; }
+h2 { font-size: 26px; font-weight: normal; margin-bottom: 12px; }
+.notes p { font-size: 17px; line-height: 1.55; max-width: 340px; }
+footer { border-top: 1px solid var(--line); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+@keyframes reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (max-width: 700px) { .local { display: none; } main { padding-top: 15px; } .intro { display: block; } h1 { margin-bottom: 25px; } .provenance { margin-top: 20px; } .toolbar, .transport { padding: 14px; gap: 12px; } #reset { margin-left: 0; } .views { min-height: 330px; } canvas { height: 340px; } .notes { grid-template-columns: 1fr; gap: 15px; margin: 35px 0; } .notes p { max-width: none; } figcaption { font-size: 9px; left: 12px; } .wordmark span { display: none; } }
+@media (prefers-reduced-motion: reduce) { .studio { animation: none; } }

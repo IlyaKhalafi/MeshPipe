@@ -86,3 +86,18 @@ Accessories view renders the opaque face and accessory together with normal
 depth testing, so temple arms disappear behind the face instead of drawing over
 it. This is a 3D AR fitting view, not a source-camera compositing filter or an
 invisible camera-image occluder. Accessories are original procedural geometry.
+
+## Browser showcase
+
+Open a recording, optionally apply motion edits, then export browser studio.
+The output folder contains HTML, CSS, JavaScript and quantized facial motion.
+No source images, external libraries or network services are required for
+playback. Serve the folder with `python -m http.server 8000` and open localhost
+in a browser. Upload the static files to a host such as GitHub Pages to share.
+
+Drag or use arrow keys to orbit. Scroll or use plus and minus to zoom.
+Switch between a face mesh, golden emoji and paper robot. Raw, Kalman and shared
+side-by-side views use one timeline. Motion is downsampled to at most 360 frames
+by default, not rerun through MediaPipe in the browser. Source provenance labels
+distinguish genuine tracking from synthetic demos. Facial motion remains
+sensitive even without images. Only share with recorded people's permission.

@@ -48,7 +48,30 @@ stay opt-in. Hide the workbench when you only need the viewer.
 
 [Workbench guide](docs/workbench.md) and [Blender receiver](docs/streaming.md)
 cover setup and limitations.
-See [motion studio](docs/advanced.md) for adaptive CPU and landmark-only controls.
+See [motion studio](docs/advanced.md) for eight new opt-in workflows.
+
+## Motion, remixed
+
+| Tool | What you can do |
+| --- | --- |
+| Custom GLB avatars | Load a morph-target head, map expressions and save rig presets |
+| Motion editor | Trim, remove spikes, shape expression curves, fade and blend takes without changing originals |
+| Offline Blender bake | Export reduced animation keys, remap channels and bake new actions |
+| Browser studio | Orbit recorded motion, switch characters and compare raw with Kalman |
+| Face accessories | Attach procedural glasses, brows or a crown with saved anchors and face-depth occlusion |
+| Adaptive CPU | Tune processing size and live camera cadence against a measured budget |
+| Landmark-only recording | Save facial motion without source images and hide source previews |
+| Displacement heatmaps | Compare expression geometry against neutral with rigid head motion removed |
+
+The included browser demo uses genuine NASA interview tracking, not an animated
+photo. No camera permission or model download needed for replay.
+
+```bash
+python -m http.server 8000 --directory docs/demo
+```
+
+Open `http://localhost:8000`. Desktop Motion controls export your own standalone
+browser studio. Sharing motion still requires the recorded person's consent.
 
 ```bash
 meshpipe run --replay exports/performance.meshpipe --loop

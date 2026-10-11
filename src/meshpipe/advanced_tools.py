@@ -64,6 +64,13 @@ class AdvancedTools:
         )
         tools.tabs.add_tab("Motion", panel)
         self.panel = panel
+        panel.add_child(
+            section(
+                "BROWSER SHOWCASE",
+                gui.Label("Share motion without source images."),
+                button("Export browser studio", safe(self.export_web)),
+            )
+        )
         self.accessory_name = combo(["Glasses", "Crown", "Brows"], lambda *_: None)
         self.accessory_index = gui.NumberEdit(gui.NumberEdit.INT)
         self.accessory_index.set_limits(0, 467)
@@ -196,6 +203,14 @@ class AdvancedTools:
             self.reader(), path, self.bake_fps.double_value, self.bake_tolerance.double_value
         )
         self.tools.notice.text = f"Saved {path.name}"
+
+    def export_web(self):
+        from meshpipe.studio_tools import export_path
+        from meshpipe.web_export import export_showcase
+
+        path = export_path("browser-studio", "")
+        export_showcase(self.reader(), path)
+        self.tools.notice.text = f"Saved {path.name}. Serve directory over HTTP."
 
     def load_avatar(self, path):
         avatar = load_glb(path)
