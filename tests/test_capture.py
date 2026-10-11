@@ -94,6 +94,24 @@ def test_camera_disconnection_surfaces_error(monkeypatch):
         source.close()
 
 
+def test_camera_coarse_clock_keeps_timestamps_strictly_increasing(monkeypatch):
+    camera = FakeCamera()
+    monkeypatch.setattr(cv2, "VideoCapture", lambda source: camera)
+    monkeypatch.setattr(time, "monotonic", lambda: 100.0)
+    source = VideoSource("0", 640)
+    try:
+        timestamps = [source.read()[1] for _ in range(3)]
+        assert timestamps[0] >= 0
+        assert all(
+            current > previous
+            for previous, current in zip(timestamps[:-1], timestamps[1:], strict=True)
+        )
+    finally:
+        source.close()
+    assert camera.released
+    assert not source.thread.is_alive()
+
+
 def test_variable_frame_rate_uses_decoder_timestamps(monkeypatch, tmp_path):
     path = tmp_path / "variable.mp4"
     path.write_bytes(b"placeholder")

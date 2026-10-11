@@ -48,7 +48,12 @@ class VideoSource:
                 if not success:
                     raise OSError("Webcam disconnected or returned an empty frame")
                 with self.condition:
-                    self.latest = (frame, int((time.monotonic() - self.started) * 1000))
+                    timestamp_ms = max(
+                        int((time.monotonic() - self.started) * 1000),
+                        int(self.last_timestamp_ms) + 1,
+                    )
+                    self.last_timestamp_ms = timestamp_ms
+                    self.latest = (frame, timestamp_ms)
                     self.condition.notify_all()
         except Exception as error:
             with self.condition:
