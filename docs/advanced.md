@@ -75,3 +75,14 @@ Stable eye and nose anchors estimate a rigid alignment against the reference,
 removing head rotation and translation before comparison. Adjust the scale for
 subtle movement. Capture neutral again after camera or identity changes.
 These geometry measurements are not emotion recognition or medical analysis.
+
+## Face-attached accessories
+
+Choose Glasses, Crown or Brows in Motion, set the attachment landmark, scale and
+local x, y and depth offsets, then apply. Glasses default to the upper nose at
+168. Crown works well at forehead landmark 10. Save and load anchor presets.
+Geometry follows the tracked head basis and attachment point.
+Accessories view renders the opaque face and accessory together with normal
+depth testing, so temple arms disappear behind the face instead of drawing over
+it. This is a 3D AR fitting view, not a source-camera compositing filter or an
+invisible camera-image occluder. Accessories are original procedural geometry.

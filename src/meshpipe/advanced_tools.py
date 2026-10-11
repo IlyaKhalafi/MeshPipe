@@ -1,9 +1,10 @@
 from open3d.visualization import gui
 
+from meshpipe.accessories import AccessoryAnchor
 from meshpipe.avatar import load_glb
 from meshpipe.motion import EditedReader, MotionEdit
 from meshpipe.quality import Recovery
-from meshpipe.widgets import button, row, section, slider
+from meshpipe.widgets import button, combo, row, section, slider
 
 
 class AdvancedTools:
@@ -63,6 +64,33 @@ class AdvancedTools:
         )
         tools.tabs.add_tab("Motion", panel)
         self.panel = panel
+        self.accessory_name = combo(["Glasses", "Crown", "Brows"], lambda *_: None)
+        self.accessory_index = gui.NumberEdit(gui.NumberEdit.INT)
+        self.accessory_index.set_limits(0, 467)
+        self.accessory_index.int_value = 168
+        self.accessory_scale = slider(0.1, 3, 1, lambda _: None)
+        self.accessory_offsets = [slider(-3, 3, value, lambda _: None) for value in (0, 0, 0.18)]
+        panel.add_child(
+            section(
+                "FACE ACCESSORIES",
+                self.accessory_name,
+                gui.Label("Anchor landmark"),
+                self.accessory_index,
+                gui.Label("Scale"),
+                self.accessory_scale,
+                gui.Label("Local offsets x / y / depth"),
+                *self.accessory_offsets,
+                button("Apply accessory", safe(self.apply_accessory)),
+                row(
+                    button("Save anchor", safe(self.save_accessory)),
+                    button(
+                        "Load anchor",
+                        lambda: tools._file("Load accessory anchor", ".json", self.load_accessory),
+                    ),
+                ),
+                gui.Label("Face surface provides real depth occlusion."),
+            )
+        )
         self.heat_limit = slider(
             0.005, 0.2, 0.08, lambda value: setattr(tools.studio.content.heatmap, "limit", value)
         )
@@ -122,6 +150,35 @@ class AdvancedTools:
         if avatar is None:
             raise ValueError("Load a GLB avatar first")
         return avatar
+
+    def apply_accessory(self):
+        anchor = AccessoryAnchor(
+            self.accessory_name.selected_text,
+            self.accessory_index.int_value,
+            self.accessory_scale.double_value,
+            tuple(control.double_value for control in self.accessory_offsets),
+        )
+        self.tools.studio.content.accessory.configure(anchor)
+        studio = self.tools.studio
+        studio.mode.selected_index = studio.modes.index("Accessories")
+        studio._mode_changed("Accessories", studio.mode.selected_index)
+        self.tools.notice.text = "Accessory attached. Rotate face to inspect depth."
+
+    def save_accessory(self):
+        from meshpipe.studio_tools import export_path
+
+        path = export_path("accessory-anchor", ".json")
+        self.tools.studio.content.accessory.anchor.save(path)
+        self.tools.notice.text = f"Saved {path.name}"
+
+    def load_accessory(self, path):
+        anchor = AccessoryAnchor.load(path)
+        self.accessory_name.selected_index = ["Glasses", "Crown", "Brows"].index(anchor.name)
+        self.accessory_index.int_value = anchor.landmark
+        self.accessory_scale.double_value = anchor.scale
+        for control, value in zip(self.accessory_offsets, anchor.offset, strict=True):
+            control.double_value = value
+        self.apply_accessory()
 
     def neutral(self):
         studio = self.tools.studio

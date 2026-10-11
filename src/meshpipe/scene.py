@@ -4,6 +4,7 @@ import numpy as np
 import open3d as o3d
 from open3d.visualization import rendering
 
+from meshpipe.accessories import AccessoryRig
 from meshpipe.geometry import to_vertices, topology
 from meshpipe.heatmap import DisplacementHeatmap
 from meshpipe.pipeline import Frame
@@ -50,6 +51,7 @@ class FaceScene:
         self.cartoon = None
         self.custom_avatar = None
         self.heatmap = DisplacementHeatmap()
+        self.accessory = AccessoryRig()
         self.lit = True
         self.mesh = o3d.geometry.TriangleMesh()
         self.mesh.triangles = o3d.utility.Vector3iVector(topology().copy())
@@ -227,6 +229,16 @@ class FaceScene:
                 )
                 record.albedo_img = o3d.geometry.Image(np.ascontiguousarray(texture))
         self._replace("face", geometry, record)
+        if self.mode == "Accessories":
+            from meshpipe.geometry import normals
+
+            vertices = self.accessory.deform(frame.vertices)
+            triangles = self.accessory.triangles
+            mesh = o3d.geometry.TriangleMesh(
+                o3d.utility.Vector3dVector(vertices), o3d.utility.Vector3iVector(triangles)
+            )
+            mesh.vertex_normals = o3d.utility.Vector3dVector(normals(vertices, triangles))
+            self._replace("accessory", mesh, material([1, 0.68, 0.22]))
         self._update_selection(frame)
 
     def _remove_selection(self) -> None:

@@ -83,6 +83,7 @@ class Studio:
             "Cartoon",
             "Custom Avatar",
             "Heatmap",
+            "Accessories",
         ]
         for item in self.modes:
             self.mode.add_item(item)
