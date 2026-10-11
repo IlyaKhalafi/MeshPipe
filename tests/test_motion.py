@@ -73,3 +73,12 @@ def test_fades_curves_blend(performance):
 def test_invalid_edits(edit):
     with pytest.raises(ValueError):
         edit.validate(400)
+
+
+def test_unedited_geometry_reuses_cached_arrays(performance):
+    reader = EditedReader(SessionReader(performance))
+    original = reader._base_frame(0)
+    edited = reader.frame(0)
+    assert edited.vertices is original.vertices
+    assert edited.normals is original.normals
+    reader.close()

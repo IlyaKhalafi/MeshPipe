@@ -460,11 +460,15 @@ class StudioTools:
                 self._toggle_stream()
                 self.notice.text = f"OSC stopped. {error}"
         if clock - self.last_quality >= 0.5:
-            quality = assess(frame)
-            self.quality.text = quality.hint
-            self.quality_values.text = (
-                f"Light {quality.brightness:.0f}/255  /  Face {quality.face_fraction:.0%}"
-            )
+            if frame.source_available:
+                quality = assess(frame)
+                self.quality.text = quality.hint
+                self.quality_values.text = (
+                    f"Light {quality.brightness:.0f}/255  /  Face {quality.face_fraction:.0%}"
+                )
+            else:
+                self.quality.text = "Landmark-only replay. Source images unavailable."
+                self.quality_values.text = "Lighting and focus cannot be measured."
             self.last_quality = clock
         if self.inspect_enabled:
             self.history.update(frame.timestamp_ms, frame.landmarks)

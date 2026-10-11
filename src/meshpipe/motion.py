@@ -60,7 +60,7 @@ class MotionEdit:
             edit = cls(**data["edit"])
             edit.validate(duration)
             return edit
-        except (KeyError, TypeError, OverflowError) as error:
+        except (KeyError, TypeError, OverflowError, RecursionError) as error:
             raise ValueError("Invalid motion edit document") from error
 
 
@@ -168,8 +168,8 @@ class EditedReader:
             curve = self.edit.curves.get(name)
             gain = np.interp(source_time, *np.asarray(curve).T) if curve else 1
             scores[name] = float(np.clip(score * self.edit.strength * fade * gain, 0, 1))
-        vertices = vertex_normals = None
-        if landmarks is not None:
+        vertices, vertex_normals = frame.vertices, frame.normals
+        if landmarks is not None and landmarks is not frame.landmarks:
             vertices = to_vertices(landmarks, frame.rgb.shape[1] / frame.rgb.shape[0])
             vertex_normals = normals(vertices, topology())
         return replace(

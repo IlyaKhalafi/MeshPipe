@@ -50,6 +50,7 @@ Limits include a 32 MiB file, 100000 total vertices, 64 morphs per primitive and
 compression and required extensions fail with an explicit message. Export a
 morph-only head rather than a complete skinned humanoid. This is expression
 retargeting, not automatic rig discovery or full-body animation.
+Bake nonzero default morph weights into the rest mesh before exporting.
 
 ## Offline Blender bake
 
@@ -66,6 +67,7 @@ New actions preserve existing actions and restore current key values and root
 rotation. Reduced keys use linear interpolation. Existing animation can be
 restored by selecting its old action. Blender runtime needs a local installation
 and a compatible rig. The export protocol is tested without Blender.
+Head baking preserves Euler, quaternion and axis-angle rotation modes.
 
 ## Expression displacement heatmap
 

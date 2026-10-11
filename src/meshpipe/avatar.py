@@ -25,6 +25,10 @@ class Avatar:
             raise ValueError("GLB scene contains no triangle meshes")
         self.parts = parts
         points = np.concatenate([part.vertices for part in parts])
+        if not np.isfinite(points).all() or any(
+            not np.isfinite(delta).all() for part in parts for delta in part.targets.values()
+        ):
+            raise ValueError("Avatar transforms produced nonfinite geometry")
         center = (points.min(axis=0) + points.max(axis=0)) / 2
         scale = 3 / max(float(np.ptp(points, axis=0).max()), 1e-6)
         for part in parts:
@@ -83,7 +87,16 @@ def load_glb(path: Path) -> Avatar:
         raise ValueError("GLB exceeds 32 MiB")
     try:
         return _load_glb(path.read_bytes())
-    except (KeyError, IndexError, TypeError, struct.error, UnicodeError) as error:
+    except (
+        KeyError,
+        IndexError,
+        TypeError,
+        struct.error,
+        UnicodeError,
+        OverflowError,
+        Image.DecompressionBombError,
+        RecursionError,
+    ) as error:
         raise ValueError("Invalid or unsupported GLB structure") from error
 
 
@@ -102,6 +115,8 @@ def _load_glb(data: bytes) -> Avatar:
         position += size
     if len(chunks) != 2 or [item[0] for item in chunks] != [0x4E4F534A, 0x004E4942]:
         raise ValueError("GLB requires one JSON chunk and one binary chunk")
+    if len(chunks[0][1]) > 2 * 1024 * 1024:
+        raise ValueError("GLB JSON metadata exceeds 2 MiB")
     document = json.loads(chunks[0][1])
     binary = chunks[1][1]
     if document.get("asset", {}).get("version") != "2.0":
@@ -155,15 +170,21 @@ def _load_glb(data: bytes) -> Avatar:
     parts = []
     total_vertices = total_targets = 0
     active = set()
+    visits = 0
 
     def visit(index, parent, depth=0):
-        nonlocal total_vertices, total_targets
+        nonlocal total_vertices, total_targets, visits
+        visits += 1
+        if visits > 4096:
+            raise ValueError("GLB node traversal exceeds 4096 instances")
         if not isinstance(index, int) or index < 0 or depth > 64 or index in active:
             raise ValueError("Invalid or cyclic GLB node hierarchy")
         active.add(index)
         node = document["nodes"][index]
         if "skin" in node:
             raise ValueError("Skinned avatars unsupported. Export a morph-target head mesh.")
+        if any(node.get("weights", [])):
+            raise ValueError("Bake default morph weights into the rest mesh before export")
         if "matrix" in node:
             transform = np.asarray(node["matrix"], dtype=float).reshape(4, 4).T
         else:
@@ -174,8 +195,12 @@ def _load_glb(data: bytes) -> Avatar:
         transform = parent @ transform
         if not np.isfinite(transform).all() or not np.allclose(transform[3], [0, 0, 0, 1]):
             raise ValueError("Invalid node transform")
+        if np.abs(transform).max() > 1e6:
+            raise ValueError("Node transform exceeds supported bounds")
         if "mesh" in node:
             mesh = document["meshes"][node["mesh"]]
+            if any(mesh.get("weights", [])):
+                raise ValueError("Bake default morph weights into the rest mesh before export")
             names = mesh.get("extras", {}).get("targetNames", [])
             for primitive in mesh["primitives"]:
                 if len(parts) >= 32 or primitive.get("mode", 4) != 4 or primitive.get("extensions"):

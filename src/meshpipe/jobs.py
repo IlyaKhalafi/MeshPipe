@@ -54,9 +54,11 @@ class ExportJob:
         except Exception as error:
             self.error = f"{type(error).__name__}: {error}"
         finally:
-            if reader:
-                reader.close()
-            self.done.set()
+            try:
+                if reader:
+                    reader.close()
+            finally:
+                self.done.set()
 
     def close(self):
         self.cancel.set()

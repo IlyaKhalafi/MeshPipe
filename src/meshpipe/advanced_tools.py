@@ -67,6 +67,8 @@ class AdvancedTools:
         )
         tools.tabs.add_tab("Motion", panel)
         self.panel = panel
+        if tools.studio.playback:
+            self.sync()
         panel.add_child(
             section(
                 "BROWSER SHOWCASE",
@@ -316,6 +318,9 @@ class AdvancedTools:
     def sync(self):
         reader = self.reader()
         edit = reader.edit
+        duration = max(1, reader.base.duration_ms)
+        self.trim_start.set_limits(0, duration)
+        self.trim_end.set_limits(0, duration)
         self.trim_start.double_value = edit.start_ms
         self.trim_end.double_value = reader.base.duration_ms if edit.end_ms is None else edit.end_ms
         self.strength.double_value = edit.strength

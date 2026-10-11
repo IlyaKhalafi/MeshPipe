@@ -79,4 +79,7 @@ def load_animation(path):
     path = Path(path)
     if path.stat().st_size > 8 * 1024 * 1024:
         raise ValueError("Animation payload exceeds 8 MiB")
-    return validate_animation(json.loads(path.read_text(encoding="utf8")))
+    try:
+        return validate_animation(json.loads(path.read_text(encoding="utf8")))
+    except RecursionError as error:
+        raise ValueError("Animation JSON nesting exceeds supported bounds") from error

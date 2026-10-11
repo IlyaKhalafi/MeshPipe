@@ -83,17 +83,26 @@ def bake_animation(context, payload, mapping, strength, start_frame):
                         return left[1] + (right[1] - left[1]) * fraction
                 return track[-1][1]
 
-            root.rotation_mode = "XYZ"
             last_euler = root.rotation_euler.copy()
+            last_quaternion = None
             for frame in times:
                 angles = [value_at(tracks.get(axis, [[1, 0]]), frame) for axis in "xyz"]
-                root.rotation_euler = (base @ Euler(angles, "XYZ").to_quaternion()).to_euler(
-                    "XYZ", last_euler
-                )
-                last_euler = root.rotation_euler.copy()
-                root.keyframe_insert(
-                    data_path="rotation_euler", frame=start_frame + (frame - 1) * factor
-                )
+                quaternion = base @ Euler(angles, "XYZ").to_quaternion()
+                if last_quaternion is not None and quaternion.dot(last_quaternion) < 0:
+                    quaternion.negate()
+                last_quaternion = quaternion.copy()
+                if root.rotation_mode == "QUATERNION":
+                    root.rotation_quaternion = quaternion
+                    path = "rotation_quaternion"
+                elif root.rotation_mode == "AXIS_ANGLE":
+                    axis, angle = quaternion.to_axis_angle()
+                    root.rotation_axis_angle = (angle, *axis)
+                    path = "rotation_axis_angle"
+                else:
+                    root.rotation_euler = quaternion.to_euler(root.rotation_mode, last_euler)
+                    last_euler = root.rotation_euler.copy()
+                    path = "rotation_euler"
+                root.keyframe_insert(data_path=path, frame=start_frame + (frame - 1) * factor)
         for owner in owners:
             if owner.animation_data.action:
                 owner.animation_data.action.name = "MeshPipe baked performance"

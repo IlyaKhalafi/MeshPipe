@@ -92,3 +92,13 @@ def test_bundled_morph_head():
     assert len(avatar.names) == 5
     for part in avatar.parts:
         assert np.isfinite(avatar.deform(part, {"jawOpen": 1})).all()
+
+
+def test_bounded_node_traversal(tmp_path):
+    def many_nodes(document):
+        document["nodes"] = [{"children": [index + 1, index + 1]} for index in range(20)] + [{}]
+
+    path = tmp_path / "head.glb"
+    write_avatar(path, many_nodes)
+    with pytest.raises(ValueError, match="traversal"):
+        load_glb(path)

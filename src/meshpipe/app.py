@@ -261,7 +261,11 @@ class Studio:
             self._update_preview(frame)
             self.tools.on_frame(frame, now)
             self.status.text = "Tracking face" if frame.vertices is not None else "No face detected"
-            self.metrics.text = f"{frame.fps:.1f} FPS  /  {frame.processing_ms:.1f} ms processing"
+            self.metrics.text = (
+                "Recorded motion / no inference"
+                if self.playback
+                else f"{frame.fps:.1f} FPS  /  {frame.processing_ms:.1f} ms processing"
+            )
         elif finished and not self.failed:
             self.status.text = "Video ended. Last frame available for export."
         if self.failed:
